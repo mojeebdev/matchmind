@@ -1,0 +1,35 @@
+{
+  "name": "matchmind",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "seed": "tsx scripts/seed.ts",
+    "sync": "tsx scripts/sync.ts",
+    "agent:dev": "npx adk web",
+    "agent:run": "npx adk run agent/matchmind-agent.ts",
+    "agent:deploy": "npx adk deploy agent_engine"
+  },
+  "dependencies": {
+    "@google/adk": "^1.2.0",
+    "@google/generative-ai": "^0.24.0",
+    "mongodb": "^6.16.0",
+    "next": "^16.2.7",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@google/adk-devtools": "^1.2.0",
+    "@tailwindcss/postcss": "^4.1.8",
+    "@types/node": "^22.15.21",
+    "@types/react": "^19.1.6",
+    "@types/react-dom": "^19.1.5",
+    "tailwindcss": "^4.1.8",
+    "tsx": "^4.19.4",
+    "typescript": "^5.8.3"
+  }
+}

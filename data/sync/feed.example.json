@@ -1,0 +1,21 @@
+{
+  "meta": {
+    "source": "manual-feed",
+    "note": "Copy to data/sync/feed.json (gitignored) and edit after matchdays"
+  },
+  "matches": [
+    {
+      "homeTeam": "Mexico",
+      "awayTeam": "South Korea",
+      "homeScore": 2,
+      "awayScore": 1,
+      "status": "finished"
+    }
+  ],
+  "players": [
+    {
+      "playerName": "Kylian Mbappé",
+      "goalsDelta": 1
+    }
+  ]
+}
