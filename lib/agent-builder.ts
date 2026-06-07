@@ -155,20 +155,7 @@ export async function runAgent(
   userContext?: AgentUserContext
 ): Promise<AgentResponse> {
   if (isAdkEnabled()) {
-    console.info(
-      `[AgentBuilder] ADK agent active` +
-        (isAgentBuilderConfigured()
-          ? ` (project: ${process.env.GOOGLE_CLOUD_PROJECT})`
-          : ' (local InMemoryRunner)')
-    )
     return runAdkAgent(question, userContext)
-  }
-
-  if (isAgentBuilderConfigured()) {
-    console.info(
-      `[AgentBuilder] Project ${process.env.GOOGLE_CLOUD_PROJECT} configured — ` +
-        `set USE_ADK_AGENT=true to enable ADK orchestration`
-    )
   }
 
   return processAgentQuestion(question, userContext)

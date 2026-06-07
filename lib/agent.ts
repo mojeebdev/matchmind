@@ -99,7 +99,6 @@ async function fetchFootballData(
   question: string
 ): Promise<{ mongoData: Record<string, unknown>; isLiveData: boolean }> {
   if (!isMongoConfigured()) {
-    console.info('[MatchMind] Demo mode — MongoDB not configured, using mock data')
     return {
       mongoData: getMockDataForType(questionType, question),
       isLiveData: false,
@@ -108,10 +107,6 @@ async function fetchFootballData(
 
   const queryPlan = await generateMongoQuery(questionType, question)
   const mcpResult = await mcpQueryFootballData(queryPlan)
-
-  if (mcpResult.records.length === 0) {
-    console.info(`[MatchMind] Empty result from ${mcpResult.collection} — no mock fallback`)
-  }
 
   return {
     mongoData: { [mcpResult.collection]: mcpResult.records },
