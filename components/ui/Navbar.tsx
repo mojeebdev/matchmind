@@ -42,7 +42,7 @@ export function Navbar() {
   const { data: session, status } = useSession()
   const [menuOpen, setMenuOpen] = useState(false)
 
-  const isAuthenticated = status === 'authenticated' && Boolean(session?.user)
+  const user = status === 'authenticated' ? session?.user : undefined
   const isLoading = status === 'loading'
 
   useEffect(() => {
@@ -58,7 +58,7 @@ export function Navbar() {
 
   const navLinks = [
     { href: appPath('/docs/architecture'), label: 'Architecture' },
-    ...(isAuthenticated
+    ...(user
       ? [
           { href: appPath('/history'), label: 'History' },
           { href: appPath('/profile'), label: 'Profile' },
@@ -93,7 +93,7 @@ export function Navbar() {
             </Link>
           ))}
 
-          {isLoading ? null : isAuthenticated ? <SignOutButton /> : <SignInButton />}
+          {isLoading ? null : user ? <SignOutButton /> : <SignInButton />}
         </div>
 
         <button
@@ -117,10 +117,10 @@ export function Navbar() {
             </Link>
           ))}
 
-          {isLoading ? null : isAuthenticated ? (
+          {isLoading ? null : user ? (
             <>
               <span className="site-nav__mobile-meta">
-                {session?.user?.profile?.displayName || session?.user?.name || session?.user?.email}
+                {user.profile?.displayName || user.name || user.email}
               </span>
               <button
                 type="button"

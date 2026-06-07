@@ -44,3 +44,10 @@ export function subdomainAuthCookies(domain: string): NonNullable<NextAuthConfig
 export function isGoogleAuthEnabled() {
   return Boolean(process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET)
 }
+
+/** Session JWT cookie name — must match auth.ts and middleware getToken(). */
+export function sessionTokenCookieName() {
+  const secure = process.env.NODE_ENV === 'production'
+  const prefix = secure ? '__Secure-' : ''
+  return `${prefix}authjs.session-token`
+}

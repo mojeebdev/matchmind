@@ -1,6 +1,7 @@
 import { getToken } from 'next-auth/jwt'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import { sessionTokenCookieName } from '@/lib/auth/cookies'
 import {
   appHostUrl,
   authHostUrl,
@@ -30,24 +31,20 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next()
   }
 
-  const rewrite = rewriteForSubdomain(req, subdomain)
-  if (rewrite) return rewrite
-
-  const canonical = getCanonicalRedirect(req, subdomain)
-  if (canonical) return canonical
-
-  const token = await getToken({ req, secret: process.env.AUTH_SECRET })
+  const token = await getToken({
+    req,
+    secret: process.env.AUTH_SECRET,
+    cookieName: sessionTokenCookieName(),
+  })
   const isLoggedIn = Boolean(token?.id)
   const onboardingComplete = Boolean(
     (token?.profile as { onboardingComplete?: boolean } | undefined)?.onboardingComplete
   )
 
-  const protectedPaths = ['/profile', '/history']
-  const isProtected = protectedPaths.some((path) => pathname.startsWith(path))
-
   const isSignInPath = pathname === '/signin' || pathname === '/auth/signin'
   const isSignUpPath = pathname === '/signup' || pathname === '/auth/signup'
 
+  // Run before subdomain rewrites so auth.matchmind.xyz/signin redirects when logged in.
   if (isLoggedIn && isSignInPath) {
     return NextResponse.redirect(new URL(agentHostUrl(host, '/')))
   }
@@ -58,6 +55,15 @@ export async function middleware(req: NextRequest) {
       : appHostUrl(host, '/onboarding')
     return NextResponse.redirect(new URL(destination))
   }
+
+  const rewrite = rewriteForSubdomain(req, subdomain)
+  if (rewrite) return rewrite
+
+  const canonical = getCanonicalRedirect(req, subdomain)
+  if (canonical) return canonical
+
+  const protectedPaths = ['/profile', '/history']
+  const isProtected = protectedPaths.some((path) => pathname.startsWith(path))
 
   if (isProtected && !isLoggedIn) {
     const signInUrl = new URL(authHostUrl(host, '/signin'))

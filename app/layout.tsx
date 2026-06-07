@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Analytics } from '@vercel/analytics/next'
 import '@/styles/globals.css'
+import { auth } from '@/auth'
 import { SessionProvider } from '@/components/providers/SessionProvider'
 import { absoluteUrl, siteConfig } from '@/lib/site'
 
@@ -61,11 +62,13 @@ export const metadata: Metadata = {
   manifest: '/manifest.webmanifest',
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  const session = await auth()
+
   return (
     <html lang="en">
       <head>
@@ -76,7 +79,7 @@ export default function RootLayout({
         <link rel="alternate" type="application/json" href={absoluteUrl('/identity.json')} title="Identity" />
       </head>
       <body>
-        <SessionProvider>
+        <SessionProvider session={session}>
           {children}
           <Analytics />
         </SessionProvider>
