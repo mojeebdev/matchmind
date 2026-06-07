@@ -76,7 +76,6 @@ export function Footer() {
             }}>Project</span>
             {[
               { label: 'GitHub', href: 'https://github.com/mojeebdev/matchmind', external: true },
-              { label: 'Live Demo', href: 'https://matchmind.xyz', external: true },
               { label: 'Architecture', href: '/docs/architecture', external: false },
               { label: 'README', href: 'https://github.com/mojeebdev/matchmind#readme', external: true },
             ].map(link => (

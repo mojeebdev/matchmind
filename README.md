@@ -3,7 +3,7 @@
 
 > AI football intelligence for World Cup 2026 fans — powered by Gemini, Google Cloud Agent Builder (ADK), and MongoDB Atlas.
 
-[![Live Demo](https://img.shields.io/badge/Live-Demo-gold?style=flat-square)](https://matchmind.xyz)
+[![Live at matchmind.xyz](https://img.shields.io/badge/Live%20at-matchmind.xyz-gold?style=flat-square)](https://matchmind.xyz)
 [![MongoDB](https://img.shields.io/badge/Partner-MongoDB-green?style=flat-square)](https://mongodb.com)
 [![Google Cloud](https://img.shields.io/badge/Built%20on-Google%20Cloud-blue?style=flat-square)](https://cloud.google.com)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow?style=flat-square)](LICENSE)

@@ -1,11 +1,14 @@
 import { ImageResponse } from 'next/og'
 import { BRAND } from '@/lib/brand'
+import { publicSvgDataUrl } from '@/lib/og-assets'
 
-export const alt = 'MatchMind — Football Intelligence AI for World Cup 2026'
+export const alt = 'Football Intelligence AI | MatchMind — World Cup 2026'
 export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
 
-export default function OpenGraphImage() {
+export default async function OpenGraphImage() {
+  const logoSrc = await publicSvgDataUrl('logo.svg')
+
   return new ImageResponse(
     (
       <div
@@ -20,7 +23,6 @@ export default function OpenGraphImage() {
           position: 'relative',
         }}
       >
-        {/* Dot grid overlay */}
         <div
           style={{
             position: 'absolute',
@@ -32,21 +34,8 @@ export default function OpenGraphImage() {
           }}
         />
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 20, zIndex: 1 }}>
-          <div
-            style={{
-              width: 72,
-              height: 72,
-              borderRadius: 16,
-              background: BRAND.emerald,
-              border: `2px solid ${BRAND.goldBorder}`,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <div style={{ fontSize: 28, fontWeight: 700, color: BRAND.gold }}>MM</div>
-          </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 28, zIndex: 1 }}>
+          <img src={logoSrc} width={360} height={72} alt="MatchMind" />
           <span
             style={{
               fontSize: 14,
@@ -57,6 +46,7 @@ export default function OpenGraphImage() {
               background: BRAND.goldDim,
               padding: '6px 14px',
               borderRadius: 999,
+              marginLeft: 'auto',
             }}
           >
             World Cup 2026 · AI Football Intelligence
@@ -66,16 +56,15 @@ export default function OpenGraphImage() {
         <div style={{ display: 'flex', flexDirection: 'column', zIndex: 1 }}>
           <div
             style={{
-              display: 'flex',
-              fontSize: 88,
-              fontWeight: 700,
-              letterSpacing: '-3px',
-              lineHeight: 1,
-              marginBottom: 20,
+              fontSize: 36,
+              color: BRAND.inkPrimary,
+              fontWeight: 600,
+              maxWidth: 820,
+              lineHeight: 1.35,
+              marginBottom: 16,
             }}
           >
-            <span style={{ color: BRAND.inkPrimary }}>Match</span>
-            <span style={{ color: BRAND.gold }}>Mind</span>
+            Football Intelligence AI
           </div>
           <div
             style={{

@@ -1,55 +1,63 @@
 import type { Metadata } from 'next'
 import { Analytics } from '@vercel/analytics/next'
 import '@/styles/globals.css'
-
-const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://matchmind.xyz'
+import { absoluteUrl, siteConfig } from '@/lib/site'
 
 export const metadata: Metadata = {
-  metadataBase: new URL(appUrl),
+  metadataBase: new URL(siteConfig.url),
   title: {
-    default: 'MatchMind — Football Intelligence AI',
-    template: '%s · MatchMind',
+    default: siteConfig.title,
+    template: '%s | MatchMind',
   },
-  description:
-    'Know Your Game. Own Every Moment. AI football intelligence for World Cup 2026 fans — powered by Gemini, MongoDB Atlas, and Google Cloud Agent Builder.',
-  keywords: [
-    'World Cup 2026',
-    'football AI',
-    'MatchMind',
-    'MongoDB',
-    'Gemini',
-    'Agent Builder',
-    'football analytics',
-  ],
-  authors: [{ name: 'Mojeeb Titilayo', url: 'https://x.com/mojeebeth' }],
-  creator: 'BlindspotLab',
+  description: siteConfig.description,
+  keywords: [...siteConfig.keywords],
+  authors: [{ name: siteConfig.creator.name, url: siteConfig.creator.url }],
+  creator: siteConfig.organization.name,
+  applicationName: siteConfig.name,
+  category: 'sports',
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
+  alternates: {
+    canonical: absoluteUrl('/'),
+  },
   icons: {
     icon: [{ url: '/icon.svg', type: 'image/svg+xml' }],
     apple: [{ url: '/icon.svg', type: 'image/svg+xml' }],
   },
   openGraph: {
     type: 'website',
-    locale: 'en_US',
-    url: appUrl,
-    siteName: 'MatchMind',
-    title: 'MatchMind — Football Intelligence AI',
-    description: 'Know Your Game. Own Every Moment. AI football intelligence for World Cup 2026 fans.',
+    locale: siteConfig.locale,
+    url: absoluteUrl('/'),
+    siteName: siteConfig.name,
+    title: siteConfig.title,
+    description: siteConfig.shortDescription,
     images: [
       {
-        url: '/opengraph-image',
+        url: absoluteUrl('/opengraph-image'),
         width: 1200,
         height: 630,
-        alt: 'MatchMind — Football Intelligence AI for World Cup 2026',
+        alt: 'Football Intelligence AI | MatchMind — World Cup 2026',
+        type: 'image/png',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'MatchMind — Football Intelligence AI',
-    description: 'Know Your Game. Own Every Moment. AI football intelligence for World Cup 2026 fans.',
-    creator: '@mojeebeth',
-    images: ['/opengraph-image'],
+    title: siteConfig.title,
+    description: siteConfig.shortDescription,
+    creator: siteConfig.creator.handle,
+    images: [absoluteUrl('/opengraph-image')],
   },
+  manifest: '/manifest.webmanifest',
 }
 
 export default function RootLayout({
@@ -59,6 +67,13 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
+      <head>
+        <link rel="alternate" type="text/plain" href={absoluteUrl('/llms.txt')} title="LLMs" />
+        <link rel="alternate" type="text/plain" href={absoluteUrl('/llms-full.txt')} title="LLMs Full" />
+        <link rel="alternate" type="text/plain" href={absoluteUrl('/faq-ai.txt')} title="FAQ for AI" />
+        <link rel="alternate" type="text/plain" href={absoluteUrl('/ai.txt')} title="AI Policy" />
+        <link rel="alternate" type="application/json" href={absoluteUrl('/identity.json')} title="Identity" />
+      </head>
       <body>
         {children}
         <Analytics />

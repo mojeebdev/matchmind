@@ -1,6 +1,23 @@
+import type { Metadata } from 'next'
 import { Navbar } from '@/components/ui/Navbar'
 import { Footer } from '@/components/ui/Footer'
 import Link from 'next/link'
+import { absoluteUrl } from '@/lib/site'
+
+export const metadata: Metadata = {
+  title: 'Architecture',
+  description:
+    'How MatchMind works — Gemini classification, MongoDB Atlas queries, MCP tools, Google ADK, and the Next.js App Router stack.',
+  alternates: {
+    canonical: absoluteUrl('/docs/architecture'),
+  },
+  openGraph: {
+    url: absoluteUrl('/docs/architecture'),
+    title: 'Architecture | MatchMind',
+    description:
+      'How MatchMind works — Gemini classification, MongoDB Atlas queries, MCP tools, Google ADK, and the Next.js App Router stack.',
+  },
+}
 
 const h2 = {
   fontFamily: 'var(--font-display)',
@@ -125,7 +142,7 @@ export default function ArchitecturePage() {
 
           <h2 style={h2}>Builder Notes</h2>
           <p><strong style={{ color: 'var(--ink-primary)' }}>The database is the intelligence; the agent is the reasoning layer on top.</strong></p>
-          <p style={{ marginTop: '16px', color: 'var(--gold)' }}>That&apos;s what makes MatchMind a real agent, not a chatbot wrapper.</p>
+          <p style={{ marginTop: '16px', color: 'var(--gold)' }}>That's what makes MatchMind a real agent, not a chatbot wrapper.</p>
 
           <p style={{ marginTop: '32px', fontSize: '13px' }}>
             Full markdown: <code style={gold}>docs/ARCHITECTURE.md</code> in the repository.
