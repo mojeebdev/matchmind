@@ -1,5 +1,7 @@
 'use client'
 
+import { appPath } from '@/lib/urls'
+
 export function Footer() {
   return (
     <footer className="bg-footer section-surface" style={{
@@ -76,7 +78,9 @@ export function Footer() {
             }}>Project</span>
             {[
               { label: 'GitHub', href: 'https://github.com/mojeebdev/matchmind', external: true },
-              { label: 'Architecture', href: '/docs/architecture', external: false },
+              { label: 'Architecture', href: appPath('/docs/architecture'), external: false },
+              { label: 'Privacy', href: appPath('/privacy'), external: false },
+              { label: 'Terms', href: appPath('/terms'), external: false },
               { label: 'README', href: 'https://github.com/mojeebdev/matchmind#readme', external: true },
             ].map(link => (
               <a key={link.label} href={link.href}
@@ -174,7 +178,14 @@ export function Footer() {
             color: 'var(--ink-muted)',
             letterSpacing: '0.04em',
           }}>
-            © 2026 BlindspotLab. All rights reserved.
+            © 2026 BlindspotLab. All rights reserved.{' '}
+            <a href={appPath('/privacy')} style={{ color: 'var(--ink-muted)', textDecoration: 'none' }}>
+              Privacy
+            </a>
+            {' · '}
+            <a href={appPath('/terms')} style={{ color: 'var(--ink-muted)', textDecoration: 'none' }}>
+              Terms
+            </a>
           </span>
           <span style={{
             fontFamily: 'var(--font-body)',

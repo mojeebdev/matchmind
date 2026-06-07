@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { agentPath } from '@/lib/urls'
 
 const ctaTextShadow = '0 2px 20px rgba(8,9,10,0.8)'
 
@@ -75,7 +76,7 @@ export function CtaSection() {
           MatchMind queries real MongoDB data and responds like a broadcast analyst.
         </p>
         <Link
-          href="/agent"
+          href={agentPath('/')}
           className="btn-primary"
           style={{ boxShadow: '0 0 0 1px rgba(8,9,10,0.4)' }}
         >

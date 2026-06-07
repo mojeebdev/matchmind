@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { agentPath } from '@/lib/urls'
 
 export function HeroSection() {
   return (
@@ -81,7 +82,7 @@ export function HeroSection() {
         </p>
 
         <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
-          <Link href="/agent" className="btn-primary">
+          <Link href={agentPath('/')} className="btn-primary">
             Ask the Agent →
           </Link>
           <a href="#features" className="btn-ghost">

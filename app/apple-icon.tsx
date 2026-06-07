@@ -5,6 +5,8 @@ export const size = { width: 180, height: 180 }
 export const contentType = 'image/png'
 
 export default function AppleIcon() {
+  const dots = Array.from({ length: 9 })
+
   return new ImageResponse(
     (
       <div
@@ -12,49 +14,46 @@ export default function AppleIcon() {
           width: '100%',
           height: '100%',
           display: 'flex',
-          flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          background: `linear-gradient(145deg, ${BRAND.void} 0%, ${BRAND.emerald} 100%)`,
-          borderRadius: 40,
-          border: `3px solid ${BRAND.goldBorder}`,
+          background: BRAND.void,
         }}
       >
         <div
           style={{
+            width: 156,
+            height: 156,
             display: 'flex',
-            flexWrap: 'wrap',
-            width: 72,
-            height: 72,
-            gap: 10,
+            alignItems: 'center',
             justifyContent: 'center',
-            alignContent: 'center',
-            marginBottom: 12,
+            background: BRAND.emerald,
+            borderRadius: 36,
+            border: `4px solid ${BRAND.goldBorder}`,
           }}
         >
-          {Array.from({ length: 9 }).map((_, i) => (
-            <div
-              key={i}
-              style={{
-                width: 14,
-                height: 14,
-                borderRadius: '50%',
-                background: i === 4 ? BRAND.gold : 'rgba(201,168,76,0.4)',
-              }}
-            />
-          ))}
-        </div>
-        <div
-          style={{
-            display: 'flex',
-            fontSize: 36,
-            fontWeight: 700,
-            color: BRAND.inkPrimary,
-            letterSpacing: '-1px',
-          }}
-        >
-          <span style={{ color: BRAND.inkPrimary }}>M</span>
-          <span style={{ color: BRAND.gold }}>M</span>
+          <div
+            style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              width: 96,
+              height: 96,
+              gap: 12,
+              justifyContent: 'center',
+              alignContent: 'center',
+            }}
+          >
+            {dots.map((_, i) => (
+              <div
+                key={i}
+                style={{
+                  width: 18,
+                  height: 18,
+                  borderRadius: '50%',
+                  background: i === 4 ? BRAND.gold : 'rgba(201,168,76,0.45)',
+                }}
+              />
+            ))}
+          </div>
         </div>
       </div>
     ),

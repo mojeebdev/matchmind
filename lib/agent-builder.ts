@@ -14,6 +14,8 @@ import { matchMindAgent } from '@/agent/matchmind-agent'
 import { processAgentQuestion } from './agent'
 import { isGeminiConfigured } from './gemini'
 import { validateAgentResponse } from './validation'
+import type { AgentUserContext } from './user-context'
+import { formatUserContextBlock } from './user-context'
 import type { AgentResponse } from './types'
 
 export function isAgentBuilderConfigured(): boolean {
@@ -63,7 +65,8 @@ function inferLiveData(sources: string[]): boolean {
   return blob.includes('mongodb') || blob.includes('atlas') || blob.includes('mcp')
 }
 
-async function runAdkAgent(question: string): Promise<AgentResponse> {
+async function runAdkAgent(question: string, userContext?: AgentUserContext): Promise<AgentResponse> {
+  const contextualQuestion = `${formatUserContextBlock(userContext)}${question}`
   const runner = new InMemoryRunner({
     agent: matchMindAgent,
     appName: 'matchmind',
@@ -73,7 +76,7 @@ async function runAdkAgent(question: string): Promise<AgentResponse> {
     userId: 'matchmind-api',
     newMessage: {
       role: 'user',
-      parts: [{ text: question }],
+      parts: [{ text: contextualQuestion }],
     },
   })
 
@@ -91,7 +94,7 @@ async function runAdkAgent(question: string): Promise<AgentResponse> {
   }
 
   console.warn('[AgentBuilder] ADK response was not valid JSON — falling back to local pipeline')
-  const fallback = await processAgentQuestion(question)
+  const fallback = await processAgentQuestion(question, userContext)
   return fallback
 }
 
@@ -99,7 +102,10 @@ async function runAdkAgent(question: string): Promise<AgentResponse> {
  * Main agent orchestration entry point.
  * Called by /api/agent.
  */
-export async function runAgent(question: string): Promise<AgentResponse> {
+export async function runAgent(
+  question: string,
+  userContext?: AgentUserContext
+): Promise<AgentResponse> {
   if (isAdkEnabled()) {
     console.info(
       `[AgentBuilder] ADK agent active` +
@@ -107,7 +113,7 @@ export async function runAgent(question: string): Promise<AgentResponse> {
           ? ` (project: ${process.env.GOOGLE_CLOUD_PROJECT})`
           : ' (local InMemoryRunner)')
     )
-    return runAdkAgent(question)
+    return runAdkAgent(question, userContext)
   }
 
   if (isAgentBuilderConfigured()) {
@@ -117,5 +123,5 @@ export async function runAgent(question: string): Promise<AgentResponse> {
     )
   }
 
-  return processAgentQuestion(question)
+  return processAgentQuestion(question, userContext)
 }

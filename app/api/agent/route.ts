@@ -2,7 +2,11 @@ import { applyDnsFix } from '@/lib/dns-fix'
 import { NextRequest, NextResponse } from 'next/server'
 
 applyDnsFix()
+import { auth } from '@/auth'
 import { runAgent } from '@/lib/agent-builder'
+import { saveInteraction } from '@/lib/interactions'
+import { buildAgentUserContext } from '@/lib/user-context'
+import { findUserById } from '@/lib/users'
 import { validateAgentResponse } from '@/lib/validation'
 
 const MAX_QUESTION_LENGTH = 1000
@@ -35,7 +39,17 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const response = await runAgent(trimmed)
+    const session = await auth()
+    let userContext
+
+    if (session?.user?.id) {
+      const user = await findUserById(session.user.id)
+      if (user) {
+        userContext = await buildAgentUserContext(session.user.id, user.profile)
+      }
+    }
+
+    const response = await runAgent(trimmed, userContext)
     const validated = validateAgentResponse(response, 'general')
 
     if (!validated) {
@@ -49,6 +63,12 @@ export async function POST(request: NextRequest) {
       typeof response.live_data === 'boolean'
         ? { ...validated, live_data: response.live_data }
         : validated
+
+    if (session?.user?.id) {
+      await saveInteraction(session.user.id, trimmed, payload).catch((error) => {
+        console.error('Failed to save interaction:', error)
+      })
+    }
 
     return NextResponse.json(payload)
   } catch (error) {

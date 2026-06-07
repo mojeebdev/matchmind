@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { agentPath } from '@/lib/urls'
 import { PassingBallLoader } from './PassingBallLoader'
 import { ResponseCard } from './ResponseCard'
 import type { AgentResponse } from '@/lib/types'
@@ -116,7 +117,7 @@ export function AdminInterface() {
           MongoDB — fans see updates instantly on the public agent.
         </p>
         <Link
-          href="/agent"
+          href={agentPath('/')}
           style={{
             display: 'inline-block',
             marginTop: '16px',

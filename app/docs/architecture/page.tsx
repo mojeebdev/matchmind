@@ -3,6 +3,7 @@ import { Navbar } from '@/components/ui/Navbar'
 import { Footer } from '@/components/ui/Footer'
 import Link from 'next/link'
 import { absoluteUrl } from '@/lib/site'
+import { appPath } from '@/lib/urls'
 
 export const metadata: Metadata = {
   title: 'Architecture',
@@ -50,7 +51,7 @@ export default function ArchitecturePage() {
         }}
       >
         <Link
-          href="/"
+          href={appPath('/')}
           style={{
             fontFamily: 'var(--font-body)',
             fontSize: '13px',

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Analytics } from '@vercel/analytics/next'
 import '@/styles/globals.css'
+import { SessionProvider } from '@/components/providers/SessionProvider'
 import { absoluteUrl, siteConfig } from '@/lib/site'
 
 export const metadata: Metadata = {
@@ -75,8 +76,10 @@ export default function RootLayout({
         <link rel="alternate" type="application/json" href={absoluteUrl('/identity.json')} title="Identity" />
       </head>
       <body>
-        {children}
-        <Analytics />
+        <SessionProvider>
+          {children}
+          <Analytics />
+        </SessionProvider>
       </body>
     </html>
   )

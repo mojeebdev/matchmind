@@ -1,4 +1,4 @@
-import { absoluteUrl, siteConfig } from '@/lib/site'
+import { absoluteAgentUrl, absoluteUrl, siteConfig } from '@/lib/site'
 
 export const aiCrawlers = [
   'GPTBot',
@@ -73,7 +73,7 @@ export function buildFaqAiTxt(): string {
     '## Links',
     '',
     `- [Home](${absoluteUrl('/')}): Product overview`,
-    `- [Agent](${absoluteUrl('/agent')}): Ask football intelligence questions`,
+    `- [Agent](${absoluteAgentUrl('/')}): Ask football intelligence questions`,
     `- [Architecture](${absoluteUrl('/docs/architecture')}): Technical overview`,
     `- [GitHub](${siteConfig.github}): Source code`,
     '',
@@ -170,7 +170,7 @@ Fan question → Next.js /agent → /api/agent
 ## Public Pages
 
 - [Home](${absoluteUrl('/')}): Landing page and product overview
-- [Football Intelligence Agent](${absoluteUrl('/agent')}): Interactive Q&A agent
+- [Football Intelligence Agent](${absoluteAgentUrl('/')}): Interactive Q&A agent
 - [Architecture](${absoluteUrl('/docs/architecture')}): Technical documentation
 
 ## What We Do Not Do

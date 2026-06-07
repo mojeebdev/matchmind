@@ -1,10 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useSession } from 'next-auth/react'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
+import { useEffect, useState } from 'react'
 import { PassingBallLoader } from './PassingBallLoader'
 import { ResponseCard } from './ResponseCard'
 import type { AgentResponse } from '@/lib/types'
+import { agentPath, appPath, authPath } from '@/lib/urls'
 
 const EXAMPLE_QUESTIONS = [
   'Who are the top scorers in Group B?',
@@ -14,11 +17,37 @@ const EXAMPLE_QUESTIONS = [
   'What is the head-to-head record between Brazil and France?',
 ]
 
+type RecentItem = {
+  id: string
+  question: string
+  createdAt: string
+}
+
 export function AgentInterface() {
+  const searchParams = useSearchParams()
+  const { data: session } = useSession()
   const [question, setQuestion] = useState('')
   const [loading, setLoading] = useState(false)
   const [response, setResponse] = useState<AgentResponse | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [recent, setRecent] = useState<RecentItem[]>([])
+
+  useEffect(() => {
+    const q = searchParams.get('q')
+    if (q) setQuestion(q)
+  }, [searchParams])
+
+  useEffect(() => {
+    if (!session?.user) {
+      setRecent([])
+      return
+    }
+
+    fetch('/api/history')
+      .then((res) => (res.ok ? res.json() : { items: [] }))
+      .then((data) => setRecent((data.items ?? []).slice(0, 5)))
+      .catch(() => setRecent([]))
+  }, [session?.user, response])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -55,6 +84,8 @@ export function AgentInterface() {
     setError(null)
   }
 
+  const profile = session?.user?.profile
+
   return (
     <div style={{ maxWidth: 'var(--content-max)', margin: '0 auto', width: '100%' }}>
       <div style={{ textAlign: 'center', marginBottom: '48px' }}>
@@ -86,8 +117,38 @@ export function AgentInterface() {
           Type any World Cup 2026 question. The agent classifies your intent,
           queries MongoDB, and returns analyst-grade insight.
         </p>
+
+        {session?.user ? (
+          <p
+            style={{
+              fontFamily: 'var(--font-body)',
+              fontSize: '13px',
+              color: 'var(--gold)',
+              marginTop: '12px',
+            }}
+          >
+            Personalized for{' '}
+            {profile?.username
+              ? `@${profile.username}`
+              : profile?.supportedCountry
+                ? `${profile.supportedCountry}${profile?.favoritePlayer ? ` · ${profile.favoritePlayer}` : ''}`
+                : profile?.displayName || session.user.name || 'your profile'}
+            {' · '}
+            <Link href={appPath('/history')} style={{ color: 'var(--ink-secondary)', textDecoration: 'none' }}>
+              View history
+            </Link>
+          </p>
+        ) : (
+          <p style={{ fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--ink-muted)', marginTop: '12px' }}>
+            <Link href={authPath('/signin')} style={{ color: 'var(--gold)', textDecoration: 'none' }}>
+              Sign in
+            </Link>{' '}
+            to save history and personalize answers.
+          </p>
+        )}
+
         <Link
-          href="/agent/admin"
+          href={agentPath('/admin')}
           style={{
             display: 'inline-block',
             marginTop: '12px',
@@ -100,6 +161,46 @@ export function AgentInterface() {
           Admin: update scores & stats →
         </Link>
       </div>
+
+      {recent.length > 0 && (
+        <div className="card" style={{ padding: '18px 20px', marginBottom: '20px' }}>
+          <span
+            style={{
+              fontFamily: 'var(--font-body)',
+              fontSize: '11px',
+              letterSpacing: '0.1em',
+              textTransform: 'uppercase',
+              color: 'var(--ink-muted)',
+              display: 'block',
+              marginBottom: '10px',
+            }}
+          >
+            Your recent questions
+          </span>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            {recent.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => handleExampleClick(item.question)}
+                disabled={loading}
+                style={{
+                  fontFamily: 'var(--font-body)',
+                  fontSize: '12px',
+                  color: 'var(--ink-secondary)',
+                  background: 'var(--void-03)',
+                  border: '1px solid var(--void-border)',
+                  borderRadius: '999px',
+                  padding: '8px 16px',
+                  cursor: loading ? 'not-allowed' : 'pointer',
+                }}
+              >
+                {item.question}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       <form onSubmit={handleSubmit}>
         <div

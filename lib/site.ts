@@ -1,3 +1,5 @@
+import { agentPath, appPath, authPath } from '@/lib/urls'
+
 export const siteConfig = {
   name: 'MatchMind',
   title: 'Football Intelligence AI | MatchMind',
@@ -6,7 +8,7 @@ export const siteConfig = {
     'Know Your Game. Own Every Moment. AI football intelligence for World Cup 2026 fans — powered by Gemini, MongoDB Atlas, and Google Cloud Agent Builder.',
   shortDescription:
     'AI football intelligence for World Cup 2026 fans — powered by Gemini, MongoDB Atlas, and Google Cloud Agent Builder.',
-  url: process.env.NEXT_PUBLIC_APP_URL ?? 'https://matchmind.xyz',
+  url: process.env.NEXT_PUBLIC_APP_URL ?? 'https://app.matchmind.xyz',
   locale: 'en_US',
   themeColor: '#08090A',
   backgroundColor: '#08090A',
@@ -35,12 +37,20 @@ export const siteConfig = {
     { path: '/', changeFrequency: 'weekly' as const, priority: 1 },
     { path: '/agent', changeFrequency: 'weekly' as const, priority: 0.9 },
     { path: '/docs/architecture', changeFrequency: 'monthly' as const, priority: 0.6 },
+    { path: '/privacy', changeFrequency: 'yearly' as const, priority: 0.3 },
+    { path: '/terms', changeFrequency: 'yearly' as const, priority: 0.3 },
   ],
   noIndexRoutes: ['/agent/admin', '/api'],
 } as const
 
 export function absoluteUrl(path = ''): string {
-  const base = siteConfig.url.replace(/\/$/, '')
-  if (!path || path === '/') return `${base}/`
-  return `${base}${path.startsWith('/') ? path : `/${path}`}`
+  return appPath(path || '/')
+}
+
+export function absoluteAgentUrl(path = '/') {
+  return agentPath(path)
+}
+
+export function absoluteAuthUrl(path = '/signin') {
+  return authPath(path)
 }

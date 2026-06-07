@@ -6,6 +6,7 @@ import { generateResponseFromMongoData, isMongoDataEmpty } from './data-response
 import { sanitizeQueryPlan } from './query-safety'
 import { getDefaultQueryForType } from './query-defaults'
 import { validateAgentResponse } from './validation'
+import { formatUserContextBlock, type AgentUserContext } from './user-context'
 import type { AgentResponse, MongoQueryPlan, QuestionType } from './types'
 
 const VALID_TYPES: QuestionType[] = [
@@ -136,7 +137,8 @@ export async function analyzeFootballQuestion(
   question: string,
   questionType: QuestionType,
   mongoData: Record<string, unknown>,
-  isLiveData: boolean
+  isLiveData: boolean,
+  userContext?: AgentUserContext
 ): Promise<AgentResponse> {
   if (!isGeminiConfigured()) {
     if (isMongoDataEmpty(mongoData)) {
@@ -163,12 +165,12 @@ Return ONLY valid JSON in this exact shape:
   "data_sources": []
 }`
 
-    const userPrompt = `Question: ${question}
+    const userPrompt = `${formatUserContextBlock(userContext)}Question: ${question}
 
 Available data from MongoDB:
 ${JSON.stringify(mongoData, null, 2)}
 
-Analyze this data and answer the question as a senior football analyst.`
+Analyze this data and answer the question as a senior football analyst. When fan profile context is present, personalize examples and emphasis without inventing unsupported preferences.`
 
     const result = await model.generateContent([systemPrompt, userPrompt])
     const text = result.response.text()
@@ -196,14 +198,18 @@ Analyze this data and answer the question as a senior football analyst.`
   }
 }
 
-export async function processAgentQuestion(question: string): Promise<AgentResponse> {
+export async function processAgentQuestion(
+  question: string,
+  userContext?: AgentUserContext
+): Promise<AgentResponse> {
   const questionType = await classifyQuestion(question)
   const { mongoData, isLiveData } = await fetchFootballData(questionType, question)
   const response = await analyzeFootballQuestion(
     question,
     questionType,
     mongoData,
-    isLiveData
+    isLiveData,
+    userContext
   )
 
   const final =

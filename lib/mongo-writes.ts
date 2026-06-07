@@ -133,6 +133,17 @@ export async function updateMatchResult(input: {
     standings = await recalculateGroupStandings(match.group as string)
   }
 
+  import('@/lib/notifications')
+    .then(({ notifySupportedCountryMatchResult }) =>
+      notifySupportedCountryMatchResult({
+        homeTeam: input.homeTeam,
+        awayTeam: input.awayTeam,
+        homeScore: input.homeScore,
+        awayScore: input.awayScore,
+      })
+    )
+    .catch((error) => console.error('Match alert emails failed:', error))
+
   return {
     status: 'success' as const,
     match: {
@@ -185,6 +196,28 @@ export async function updatePlayerStats(input: {
 
   await db.collection('players').updateOne({ _id: player._id }, { $set: update })
 
+  const beforeGoals = player.goals as number
+  const afterGoals = (update.goals ?? player.goals) as number
+  const goalsAdded =
+    typeof input.goalsDelta === 'number'
+      ? input.goalsDelta
+      : typeof input.goals === 'number'
+        ? Math.max(0, input.goals - beforeGoals)
+        : 0
+
+  if (goalsAdded > 0) {
+    import('@/lib/notifications')
+      .then(({ notifyFavoritePlayerUpdate }) =>
+        notifyFavoritePlayerUpdate({
+          playerName: player.name as string,
+          team: player.team as string,
+          goals: afterGoals,
+          goalsAdded,
+        })
+      )
+      .catch((error) => console.error('Player alert emails failed:', error))
+  }
+
   return {
     status: 'success' as const,
     player: {
@@ -192,7 +225,7 @@ export async function updatePlayerStats(input: {
       team: player.team,
       before: { goals: player.goals, assists: player.assists },
       after: {
-        goals: update.goals ?? player.goals,
+        goals: afterGoals,
         assists: update.assists ?? player.assists,
       },
     },
