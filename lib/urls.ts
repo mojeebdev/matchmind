@@ -4,6 +4,7 @@ export const urls = {
   app: trim(process.env.NEXT_PUBLIC_APP_URL ?? 'https://app.matchmind.xyz'),
   agent: trim(process.env.NEXT_PUBLIC_AGENT_URL ?? 'https://agent.matchmind.xyz'),
   auth: trim(process.env.NEXT_PUBLIC_AUTH_URL ?? 'https://auth.matchmind.xyz'),
+  about: trim(process.env.NEXT_PUBLIC_ABOUT_URL ?? 'https://about.matchmind.xyz'),
 } as const
 
 export function appPath(path = '/') {
@@ -15,6 +16,12 @@ export function agentPath(path = '/') {
   const stripped = path.replace(/^\/agent/, '') || '/'
   const normalized = stripped.startsWith('/') ? stripped : `/${stripped}`
   return `${urls.agent}${normalized}`
+}
+
+export function aboutPath(path = '/') {
+  const stripped = path.replace(/^\/about/, '') || '/'
+  const normalized = stripped.startsWith('/') ? stripped : `/${stripped}`
+  return `${urls.about}${normalized}`
 }
 
 export function authPath(path = '/signin') {

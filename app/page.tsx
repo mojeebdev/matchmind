@@ -1,7 +1,5 @@
 import type { Metadata } from 'next'
-import { ApplicationPurposeBanner } from '@/components/home/ApplicationPurposeBanner'
 import { HeroSection } from '@/components/hero/HeroSection'
-import { AppPurposeSection } from '@/components/home/AppPurposeSection'
 import { FeaturesSection } from '@/components/features/FeaturesSection'
 import { CtaSection } from '@/components/home/CtaSection'
 import { FaqSection } from '@/components/home/FaqSection'
@@ -27,9 +25,7 @@ export default function HomePage() {
       <JsonLd data={homePageJsonLd()} />
       <Navbar />
       <main>
-        <ApplicationPurposeBanner />
         <HeroSection />
-        <AppPurposeSection />
         <FeaturesSection />
         <FaqSection />
         <CtaSection />

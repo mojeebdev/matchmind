@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { agentPath } from '@/lib/urls'
+import { aboutPath, agentPath } from '@/lib/urls'
 
 export function HeroSection() {
   return (
@@ -7,13 +7,12 @@ export function HeroSection() {
       className="bg-hero"
       style={{
         position: 'relative',
-        minHeight: 'min(72vh, 720px)',
+        minHeight: '100vh',
         display: 'flex',
         alignItems: 'center',
-        paddingTop: '48px',
+        paddingTop: 'var(--nav-height)',
       }}
     >
-      {/* Dark overlay */}
       <div
         style={{
           position: 'absolute',
@@ -48,22 +47,8 @@ export function HeroSection() {
             marginBottom: '8px',
           }}
         >
-          MatchMind
+          Match<span style={{ color: 'var(--gold)' }}>Mind</span>
         </h1>
-
-        <p
-          style={{
-            fontFamily: 'var(--font-body)',
-            fontSize: '14px',
-            fontWeight: 500,
-            letterSpacing: '0.06em',
-            textTransform: 'uppercase',
-            color: 'var(--ink-muted)',
-            marginBottom: '16px',
-          }}
-        >
-          MatchMind — AI Football Intelligence Application
-        </p>
 
         <p
           style={{
@@ -72,45 +57,12 @@ export function HeroSection() {
             fontWeight: 300,
             fontStyle: 'italic',
             color: 'var(--gold-light)',
-            marginBottom: '32px',
+            marginBottom: '40px',
             letterSpacing: '0.01em',
           }}
         >
           Know Your Game. Own Every Moment.
         </p>
-
-        <p
-          style={{
-            fontFamily: 'var(--font-body)',
-            fontSize: '16px',
-            fontWeight: 300,
-            color: 'var(--ink-secondary)',
-            lineHeight: 1.7,
-            maxWidth: 'var(--text-max)',
-            marginBottom: '20px',
-          }}
-        >
-          MatchMind is a free web app for World Cup 2026 fans. Ask any football question
-          in plain English — stats, predictions, fantasy lineups, tactics, or history —
-          and MatchMind queries MongoDB Atlas with Gemini to return structured,
-          analyst-grade answers.
-        </p>
-
-        <ul
-          style={{
-            fontFamily: 'var(--font-body)',
-            fontSize: '14px',
-            color: 'var(--ink-secondary)',
-            lineHeight: 1.7,
-            paddingLeft: '20px',
-            marginBottom: '32px',
-            maxWidth: 'var(--text-max)',
-          }}
-        >
-          <li>Search player stats, group standings, and match results</li>
-          <li>Get AI match analysis and fantasy lineup suggestions</li>
-          <li>Sign in optionally to save history and personalize responses</li>
-        </ul>
 
         <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
           <Link href={agentPath('/')} className="btn-primary">
@@ -120,6 +72,12 @@ export function HeroSection() {
             How It Works
           </a>
         </div>
+
+        <p style={{ marginTop: '24px', fontSize: '13px', color: 'var(--ink-muted)' }}>
+          <Link href={aboutPath('/')} style={{ color: 'var(--gold)', textDecoration: 'none' }}>
+            About MatchMind →
+          </Link>
+        </p>
       </div>
     </section>
   )

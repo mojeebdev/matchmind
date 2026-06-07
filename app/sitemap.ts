@@ -1,5 +1,5 @@
 import type { MetadataRoute } from 'next'
-import { absoluteAgentUrl, absoluteUrl } from '@/lib/site'
+import { absoluteAboutUrl, absoluteAgentUrl, absoluteUrl } from '@/lib/site'
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const lastModified = new Date()
@@ -16,6 +16,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       lastModified,
       changeFrequency: 'weekly',
       priority: 0.9,
+    },
+    {
+      url: absoluteAboutUrl('/'),
+      lastModified,
+      changeFrequency: 'monthly',
+      priority: 0.7,
     },
     {
       url: absoluteUrl('/docs/architecture'),

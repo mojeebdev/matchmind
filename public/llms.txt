@@ -6,7 +6,8 @@ MatchMind is a Next.js web app with a fan-facing agent and an optional admin age
 
 ## Key Pages
 
-- [Home](https://app.matchmind.xyz/): Product overview, app purpose, features, and FAQ
+- [Home](https://app.matchmind.xyz/): Product overview, features, and FAQ
+- [About](https://about.matchmind.xyz/): Application purpose and how MatchMind works
 - [Football Intelligence Agent](https://agent.matchmind.xyz/): Ask World Cup 2026 stats, predictions, fantasy, tactics, and history
 - [Sign in](https://auth.matchmind.xyz/signin): Optional account access for history and personalization
 - [Privacy](https://app.matchmind.xyz/privacy): Privacy policy

@@ -1,6 +1,6 @@
 'use client'
 
-import { appPath } from '@/lib/urls'
+import { aboutPath, appPath } from '@/lib/urls'
 
 export function Footer() {
   return (
@@ -78,6 +78,7 @@ export function Footer() {
             }}>Project</span>
             {[
               { label: 'GitHub', href: 'https://github.com/mojeebdev/matchmind', external: true },
+              { label: 'About', href: aboutPath('/'), external: false },
               { label: 'Architecture', href: appPath('/docs/architecture'), external: false },
               { label: 'Privacy', href: appPath('/privacy'), external: false },
               { label: 'Terms', href: appPath('/terms'), external: false },

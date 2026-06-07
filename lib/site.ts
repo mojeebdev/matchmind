@@ -1,4 +1,4 @@
-import { agentPath, appPath, authPath } from '@/lib/urls'
+import { aboutPath, agentPath, appPath, authPath } from '@/lib/urls'
 
 export const siteConfig = {
   name: 'MatchMind',
@@ -53,4 +53,8 @@ export function absoluteAgentUrl(path = '/') {
 
 export function absoluteAuthUrl(path = '/signin') {
   return authPath(path)
+}
+
+export function absoluteAboutUrl(path = '/') {
+  return aboutPath(path)
 }

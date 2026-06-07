@@ -1,7 +1,7 @@
 import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 
-export type Subdomain = 'apex' | 'app' | 'agent' | 'auth'
+export type Subdomain = 'apex' | 'app' | 'agent' | 'auth' | 'about'
 
 const PROD_ROOT = 'matchmind.xyz'
 
@@ -28,6 +28,7 @@ export function getSubdomainFromHost(host: string): Subdomain {
   if (hostname.startsWith('app.')) return 'app'
   if (hostname.startsWith('agent.')) return 'agent'
   if (hostname.startsWith('auth.')) return 'auth'
+  if (hostname.startsWith('about.')) return 'about'
   return 'apex'
 }
 
@@ -41,6 +42,7 @@ export function hostsForRequest(host: string) {
       app: `app.localhost:${port}`,
       agent: `agent.localhost:${port}`,
       auth: `auth.localhost:${port}`,
+      about: `about.localhost:${port}`,
       apex: host.includes('localhost') || host.includes('127.0.0.1') ? host : `localhost:${port}`,
     }
   }
@@ -50,6 +52,7 @@ export function hostsForRequest(host: string) {
     app: `app.${PROD_ROOT}`,
     agent: `agent.${PROD_ROOT}`,
     auth: `auth.${PROD_ROOT}`,
+    about: `about.${PROD_ROOT}`,
     apex: PROD_ROOT,
   }
 }
@@ -78,6 +81,12 @@ export function authHostUrl(reqHost: string, path = '/') {
   return `${hosts.protocol}://${hosts.auth}${normalized}`
 }
 
+export function aboutHostUrl(reqHost: string, path = '/') {
+  const hosts = hostsForRequest(reqHost)
+  const normalized = path.startsWith('/') ? path : `/${path}`
+  return `${hosts.protocol}://${hosts.about}${normalized}`
+}
+
 const AUTH_PUBLIC_PATHS = new Set([
   '/signin',
   '/signup',
@@ -101,6 +110,17 @@ export function rewriteForSubdomain(req: NextRequest, subdomain: Subdomain) {
 
   if (!isSubdomainRoutingEnabled()) return null
 
+  if (subdomain === 'about') {
+    if (pathname === '/' || pathname === '') {
+      return NextResponse.rewrite(new URL('/about', req.url))
+    }
+
+    if (pathname === '/about' || pathname.startsWith('/about/')) {
+      const publicPath = pathname.replace(/^\/about/, '') || '/'
+      return NextResponse.redirect(new URL(publicPath || '/', req.url))
+    }
+  }
+
   if (subdomain === 'auth') {
     if (pathname === '/' || pathname === '') {
       return NextResponse.redirect(new URL('/signin', req.url))
@@ -112,8 +132,13 @@ export function rewriteForSubdomain(req: NextRequest, subdomain: Subdomain) {
       pathname === '/onboarding' ||
       pathname.startsWith('/docs') ||
       pathname === '/privacy' ||
-      pathname === '/terms'
+      pathname === '/terms' ||
+      pathname === '/about' ||
+      pathname.startsWith('/about/')
     ) {
+      if (pathname === '/about' || pathname.startsWith('/about/')) {
+        return NextResponse.redirect(aboutHostUrl(host, '/'))
+      }
       return NextResponse.redirect(appHostUrl(host, pathname))
     }
 
@@ -148,9 +173,14 @@ export function rewriteForSubdomain(req: NextRequest, subdomain: Subdomain) {
       pathname.startsWith('/docs') ||
       pathname === '/privacy' ||
       pathname === '/terms' ||
+      pathname === '/about' ||
+      pathname.startsWith('/about/') ||
       pathname.startsWith('/auth/') ||
       AUTH_PUBLIC_PATHS.has(pathname)
     ) {
+      if (pathname === '/about' || pathname.startsWith('/about/')) {
+        return NextResponse.redirect(aboutHostUrl(host, '/'))
+      }
       if (pathname.startsWith('/auth/') || AUTH_PUBLIC_PATHS.has(pathname)) {
         const authPath = pathname.replace(/^\/auth/, '') || '/signin'
         return NextResponse.redirect(authHostUrl(host, authPath))
@@ -168,6 +198,10 @@ export function rewriteForSubdomain(req: NextRequest, subdomain: Subdomain) {
     if (pathname.startsWith('/auth/')) {
       const authPath = pathname.replace(/^\/auth/, '') || '/signin'
       return NextResponse.redirect(authHostUrl(host, authPath))
+    }
+
+    if (pathname === '/about' || pathname.startsWith('/about/')) {
+      return NextResponse.redirect(aboutHostUrl(host, '/'))
     }
   }
 
@@ -188,6 +222,10 @@ export function getCanonicalRedirect(req: NextRequest, subdomain: Subdomain) {
   if (pathname.startsWith('/auth/')) {
     const authPath = pathname.replace(/^\/auth/, '') || '/signin'
     return NextResponse.redirect(authHostUrl(host, authPath))
+  }
+
+  if (pathname === '/about' || pathname.startsWith('/about/')) {
+    return NextResponse.redirect(aboutHostUrl(host, '/'))
   }
 
   if (
@@ -212,12 +250,14 @@ export const googleOAuthOrigins = {
     'https://app.matchmind.xyz',
     'https://agent.matchmind.xyz',
     'https://auth.matchmind.xyz',
+    'https://about.matchmind.xyz',
     'https://matchmind.xyz',
   ],
   local: [
     'http://app.localhost:3000',
     'http://agent.localhost:3000',
     'http://auth.localhost:3000',
+    'http://about.localhost:3000',
     'http://localhost:3000',
   ],
 } as const
