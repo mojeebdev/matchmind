@@ -51,12 +51,19 @@ export function homePageJsonLd() {
         url: absoluteUrl('/'),
         applicationCategory: 'SportsApplication',
         operatingSystem: 'Web',
-        description: siteConfig.shortDescription,
+        description: siteConfig.description,
         offers: {
           '@type': 'Offer',
           price: '0',
           priceCurrency: 'USD',
         },
+        featureList: [
+          'World Cup 2026 football stats and standings',
+          'AI match predictions and tactical analysis',
+          'Fantasy lineup suggestions',
+          'Head-to-head history queries',
+          'Optional user accounts with saved agent history',
+        ],
         author: {
           '@type': 'Person',
           name: siteConfig.creator.name,

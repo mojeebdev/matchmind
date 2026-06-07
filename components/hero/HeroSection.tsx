@@ -38,6 +38,7 @@ export function HeroSection() {
         </span>
 
         <h1
+          aria-label="MatchMind"
           style={{
             fontFamily: 'var(--font-display)',
             fontSize: 'clamp(56px, 10vw, 96px)',
@@ -50,6 +51,20 @@ export function HeroSection() {
         >
           Match<span style={{ color: 'var(--gold)' }}>Mind</span>
         </h1>
+
+        <p
+          style={{
+            fontFamily: 'var(--font-body)',
+            fontSize: '14px',
+            fontWeight: 500,
+            letterSpacing: '0.06em',
+            textTransform: 'uppercase',
+            color: 'var(--ink-muted)',
+            marginBottom: '16px',
+          }}
+        >
+          MatchMind — AI Football Intelligence Application
+        </p>
 
         <p
           style={{
@@ -76,9 +91,10 @@ export function HeroSection() {
             marginBottom: '40px',
           }}
         >
-          A Gemini-powered AI agent that searches live World Cup 2026 match data,
-          player stats, and tactical intelligence stored in MongoDB — and answers
-          any football question like a senior analyst, not a search engine.
+          MatchMind is a free web app for World Cup 2026 fans. Ask any football question
+          in plain English — stats, predictions, fantasy lineups, tactics, or history —
+          and MatchMind queries MongoDB Atlas with Gemini to return structured,
+          analyst-grade answers.
         </p>
 
         <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>

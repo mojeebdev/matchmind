@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { HeroSection } from '@/components/hero/HeroSection'
+import { AppPurposeSection } from '@/components/home/AppPurposeSection'
 import { FeaturesSection } from '@/components/features/FeaturesSection'
 import { CtaSection } from '@/components/home/CtaSection'
 import { FaqSection } from '@/components/home/FaqSection'
@@ -26,6 +27,7 @@ export default function HomePage() {
       <Navbar />
       <main>
         <HeroSection />
+        <AppPurposeSection />
         <FeaturesSection />
         <FaqSection />
         <CtaSection />

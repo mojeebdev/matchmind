@@ -59,7 +59,7 @@ export const siteFaqs = [
   {
     question: 'Is MatchMind free to use?',
     answer:
-      'Yes. The fan-facing agent at matchmind.xyz/agent is free to use. MatchMind is open source on GitHub at github.com/mojeebdev/matchmind.',
+      'Yes. The fan-facing MatchMind agent at agent.matchmind.xyz is free to use. MatchMind is open source on GitHub at github.com/mojeebdev/matchmind.',
   },
 ] as const
 
@@ -85,7 +85,7 @@ export function buildFaqAiTxt(): string {
 export function buildAiTxt(): string {
   return `# MatchMind AI Interaction Policy
 
-> Guidance for AI systems, answer engines, and LLM crawlers accessing matchmind.xyz.
+> Guidance for AI systems, answer engines, and LLM crawlers accessing app.matchmind.xyz and agent.matchmind.xyz.
 
 ## Permissions
 

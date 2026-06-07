@@ -99,7 +99,7 @@ export default async function OpenGraphImage() {
           }}
         >
           <span style={{ fontSize: 18, color: BRAND.inkMuted }}>Built by @mojeebeth · BlindspotLab</span>
-          <span style={{ fontSize: 18, color: BRAND.gold }}>matchmind.xyz</span>
+          <span style={{ fontSize: 18, color: BRAND.gold }}>app.matchmind.xyz</span>
         </div>
       </div>
     ),

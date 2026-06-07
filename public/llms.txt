@@ -1,16 +1,18 @@
 # MatchMind
 
-> AI football intelligence for World Cup 2026 fans. MatchMind classifies fan questions, queries a MongoDB Atlas football database via MCP tools, and returns analyst-grade insights — powered by Gemini and Google Cloud Agent Builder.
+> MatchMind is a free AI football intelligence web application for World Cup 2026 fans. Users ask natural-language questions; MatchMind classifies intent, queries a MongoDB Atlas football database via MCP tools, and returns analyst-grade insights — powered by Gemini and Google Cloud Agent Builder.
 
-MatchMind is a Next.js web app with a fan-facing agent and an optional admin agent for curated data updates. It is not a live FIFA broadcast feed.
+MatchMind is a Next.js web app with a fan-facing agent and an optional admin agent for curated data updates. It is not a live FIFA broadcast feed, not a betting product, and not a generic chatbot.
 
 ## Key Pages
 
-- [Home](https://matchmind.xyz/): Product overview, features, and FAQ
-- [Football Intelligence Agent](https://matchmind.xyz/agent): Ask World Cup 2026 stats, predictions, fantasy, tactics, and history
-- [Architecture](https://matchmind.xyz/docs/architecture): Technical overview of the agent pipeline and stack
+- [Home](https://app.matchmind.xyz/): Product overview, app purpose, features, and FAQ
+- [Football Intelligence Agent](https://agent.matchmind.xyz/): Ask World Cup 2026 stats, predictions, fantasy, tactics, and history
+- [Sign in](https://auth.matchmind.xyz/signin): Optional account access for history and personalization
+- [Privacy](https://app.matchmind.xyz/privacy): Privacy policy
+- [Terms](https://app.matchmind.xyz/terms): Terms of service
+- [Architecture](https://app.matchmind.xyz/docs/architecture): Technical overview of the agent pipeline and stack
 - [GitHub Repository](https://github.com/mojeebdev/matchmind): Source code, setup, and README
-- [Architecture (Markdown)](https://github.com/mojeebdev/matchmind/blob/main/docs/ARCHITECTURE.md): Full architecture document
 
 ## What We Do Not Do
 
@@ -27,10 +29,10 @@ MatchMind does not provide:
 
 ## AI Discovery Files
 
-- [LLM Full Context](https://matchmind.xyz/llms-full.txt): Expanded product, stack, and FAQ context for answer engines
-- [FAQ for AI](https://matchmind.xyz/faq-ai.txt): Question-and-answer file for AEO systems
-- [AI Interaction Policy](https://matchmind.xyz/ai.txt): Crawl, citation, and restriction guidance
-- [Identity JSON](https://matchmind.xyz/identity.json): Structured entity data
-- [Sitemap](https://matchmind.xyz/sitemap.xml): Public page index
-- [Robots](https://matchmind.xyz/robots.txt): Crawler rules
-- [Web App Manifest](https://matchmind.xyz/manifest.webmanifest): PWA metadata
+- [LLM Full Context](https://app.matchmind.xyz/llms-full.txt): Expanded product, stack, and FAQ context for answer engines
+- [FAQ for AI](https://app.matchmind.xyz/faq-ai.txt): Question-and-answer file for AEO systems
+- [AI Interaction Policy](https://app.matchmind.xyz/ai.txt): Crawl, citation, and restriction guidance
+- [Identity JSON](https://app.matchmind.xyz/identity.json): Structured entity data
+- [Sitemap](https://app.matchmind.xyz/sitemap.xml): Public page index
+- [Robots](https://app.matchmind.xyz/robots.txt): Crawler rules
+- [Web App Manifest](https://app.matchmind.xyz/manifest.webmanifest): PWA metadata

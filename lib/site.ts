@@ -5,9 +5,9 @@ export const siteConfig = {
   title: 'Football Intelligence AI | MatchMind',
   tagline: 'Know Your Game. Own Every Moment.',
   description:
-    'Know Your Game. Own Every Moment. AI football intelligence for World Cup 2026 fans — powered by Gemini, MongoDB Atlas, and Google Cloud Agent Builder.',
+    'MatchMind is a free AI football intelligence web application for World Cup 2026 fans. Ask stats, predictions, fantasy, tactics, and history questions — powered by Gemini, MongoDB Atlas, and Google Cloud Agent Builder.',
   shortDescription:
-    'AI football intelligence for World Cup 2026 fans — powered by Gemini, MongoDB Atlas, and Google Cloud Agent Builder.',
+    'MatchMind is a free AI football intelligence web app for World Cup 2026 fans — powered by Gemini, MongoDB Atlas, and Google Cloud Agent Builder.',
   url: process.env.NEXT_PUBLIC_APP_URL ?? 'https://app.matchmind.xyz',
   locale: 'en_US',
   themeColor: '#08090A',
