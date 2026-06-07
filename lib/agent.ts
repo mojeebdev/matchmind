@@ -2,6 +2,7 @@ import { getModel, isGeminiConfigured } from './gemini'
 import { isMongoConfigured } from './mongodb'
 import { mcpQueryFootballData } from './mcp'
 import { getMockDataForType, getMockResponse } from './mock-data'
+import { isPreviewMode } from './tournament-phase'
 import { generateResponseFromMongoData, isMongoDataEmpty } from './data-response'
 import { sanitizeQueryPlan } from './query-safety'
 import { getDefaultQueryForType } from './query-defaults'
@@ -110,7 +111,7 @@ async function fetchFootballData(
 
   return {
     mongoData: { [mcpResult.collection]: mcpResult.records },
-    isLiveData: true,
+    isLiveData: !isPreviewMode(),
   }
 }
 
@@ -180,7 +181,13 @@ Return ONLY valid JSON in this exact shape:
   "data_sources": []
 }`
 
+    const tournamentNote = isPreviewMode()
+      ? `Tournament state: PREVIEW MOCKUP before kickoff (11 June 2026). The MongoDB figures are illustrative demo data for UX — always disclose they are preview mockup, not real match results. Historical head-to-head records are real past meetings.`
+      : `Tournament state: LIVE — use only synced MongoDB results. Never invent scores. Historical head-to-head data refers to past meetings, not current-tournament matches unless present in the data.`
+
     const userPrompt = `${formatUserContextBlock(userContext)}Question: ${question}
+
+${tournamentNote}
 
 Available data from MongoDB:
 ${JSON.stringify(mongoData, null, 2)}
@@ -261,18 +268,21 @@ export async function processAgentQuestion(
 
   const validated = validateAgentResponse(response, questionType)
   if (validated) {
-    return { ...validated, live_data: isMongoConfigured() ? true : isLiveData }
+    return {
+      ...validated,
+      live_data: isLiveData && !isPreviewMode(),
+    }
   }
 
   if (isMongoConfigured()) {
     return {
       ...generateResponseFromMongoData(question, questionType, mongoData, {
-        isLiveData: true,
+        isLiveData: !isPreviewMode(),
         dataSource: 'MongoDB Atlas',
       }),
-      live_data: true,
+      live_data: !isPreviewMode(),
     }
   }
 
-  return { ...getMockResponse(questionType, question), live_data: false }
+  return getMockResponse(questionType, question)
 }

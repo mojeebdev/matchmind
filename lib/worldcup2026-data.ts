@@ -1,8 +1,11 @@
 /**
- * FIFA World Cup 2026 — curated intelligence dataset
- * 48 teams · 12 groups (A–L) · squads · 72 group fixtures · knockouts · H2H
- * Tournament state: end of group stage (Matchday 3 complete)
+ * FIFA World Cup 2026 intelligence dataset
+ * 48 teams · 12 groups (A–L) · squads · fixtures · historical H2H
+ * Preview mode (before kickoff): illustrative mockup stats — clearly labeled in UI
+ * Live mode (after kickoff): real results via npm run sync / admin agent
  */
+
+import { getTournamentDataMode, isPreviewMode } from './tournament-phase'
 
 export type TeamRecord = {
   name: string
@@ -42,6 +45,7 @@ export type MatchRecord = {
   homeTeam: string
   awayTeam: string
   score: { home: number; away: number }
+  status: 'scheduled' | 'live' | 'finished'
   date: Date
   stage: 'group' | 'round-of-32' | 'round-of-16' | 'quarter' | 'semi' | 'final'
   group: string | null
@@ -118,63 +122,244 @@ const VENUES = [
   { venue: 'Lincoln Financial Field', city: 'Philadelphia' },
 ]
 
-const RAW_PLAYERS: Omit<PlayerRecord, 'group'>[] = [
-  { name: 'Lionel Messi', team: 'Argentina', position: 'FW', goals: 3, assists: 4, xG: 2.8, minutes: 251, passAccuracy: 87, age: 38, club: 'Inter Miami' },
-  { name: 'Lautaro Martínez', team: 'Argentina', position: 'FW', goals: 4, assists: 1, xG: 3.1, minutes: 264, passAccuracy: 74, age: 28, club: 'Inter Milan' },
-  { name: 'Emiliano Martínez', team: 'Argentina', position: 'GK', goals: 0, assists: 0, xG: 0, minutes: 270, passAccuracy: 81, age: 32, club: 'Aston Villa' },
-  { name: 'Rodrigo De Paul', team: 'Argentina', position: 'MF', goals: 0, assists: 2, xG: 0.4, minutes: 270, passAccuracy: 89, age: 30, club: 'Atlético Madrid' },
-  { name: 'Vinícius Jr.', team: 'Brazil', position: 'FW', goals: 4, assists: 2, xG: 3.6, minutes: 268, passAccuracy: 80, age: 25, club: 'Real Madrid' },
-  { name: 'Rodrygo', team: 'Brazil', position: 'FW', goals: 2, assists: 3, xG: 2.1, minutes: 245, passAccuracy: 82, age: 24, club: 'Real Madrid' },
-  { name: 'Raphinha', team: 'Brazil', position: 'FW', goals: 2, assists: 2, xG: 1.9, minutes: 260, passAccuracy: 79, age: 28, club: 'Barcelona' },
-  { name: 'Alisson', team: 'Brazil', position: 'GK', goals: 0, assists: 0, xG: 0, minutes: 270, passAccuracy: 85, age: 32, club: 'Liverpool' },
-  { name: 'Kylian Mbappé', team: 'France', position: 'FW', goals: 5, assists: 2, xG: 4.2, minutes: 270, passAccuracy: 81, age: 27, club: 'Real Madrid' },
-  { name: 'Antoine Griezmann', team: 'France', position: 'MF', goals: 2, assists: 3, xG: 1.6, minutes: 270, passAccuracy: 88, age: 34, club: 'Atlético Madrid' },
-  { name: 'Ousmane Dembélé', team: 'France', position: 'FW', goals: 2, assists: 1, xG: 1.7, minutes: 228, passAccuracy: 76, age: 27, club: 'PSG' },
-  { name: 'William Saliba', team: 'France', position: 'DF', goals: 0, assists: 0, xG: 0.3, minutes: 270, passAccuracy: 91, age: 24, club: 'Arsenal' },
-  { name: 'Harry Kane', team: 'England', position: 'FW', goals: 4, assists: 1, xG: 3.8, minutes: 270, passAccuracy: 77, age: 32, club: 'Bayern Munich' },
-  { name: 'Bukayo Saka', team: 'England', position: 'FW', goals: 3, assists: 2, xG: 2.2, minutes: 265, passAccuracy: 83, age: 24, club: 'Arsenal' },
-  { name: 'Jude Bellingham', team: 'England', position: 'MF', goals: 2, assists: 2, xG: 1.8, minutes: 270, passAccuracy: 86, age: 22, club: 'Real Madrid' },
-  { name: 'Declan Rice', team: 'England', position: 'MF', goals: 0, assists: 1, xG: 0.5, minutes: 270, passAccuracy: 90, age: 26, club: 'Arsenal' },
-  { name: 'Lamine Yamal', team: 'Spain', position: 'FW', goals: 3, assists: 3, xG: 2.5, minutes: 255, passAccuracy: 84, age: 18, club: 'Barcelona' },
-  { name: 'Pedri', team: 'Spain', position: 'MF', goals: 1, assists: 4, xG: 1.0, minutes: 278, passAccuracy: 92, age: 22, club: 'Barcelona' },
-  { name: 'Rodri', team: 'Spain', position: 'MF', goals: 0, assists: 2, xG: 0.3, minutes: 270, passAccuracy: 94, age: 28, club: 'Manchester City' },
-  { name: 'Jamal Musiala', team: 'Germany', position: 'MF', goals: 3, assists: 2, xG: 2.4, minutes: 252, passAccuracy: 86, age: 22, club: 'Bayern Munich' },
-  { name: 'Florian Wirtz', team: 'Germany', position: 'MF', goals: 2, assists: 3, xG: 1.9, minutes: 268, passAccuracy: 85, age: 22, club: 'Bayer Leverkusen' },
-  { name: 'Joshua Kimmich', team: 'Germany', position: 'MF', goals: 0, assists: 2, xG: 0.2, minutes: 270, passAccuracy: 91, age: 30, club: 'Bayern Munich' },
-  { name: 'Cristiano Ronaldo', team: 'Portugal', position: 'FW', goals: 3, assists: 0, xG: 2.8, minutes: 248, passAccuracy: 78, age: 40, club: 'Al Nassr' },
-  { name: 'Bruno Fernandes', team: 'Portugal', position: 'MF', goals: 2, assists: 3, xG: 1.6, minutes: 270, passAccuracy: 84, age: 30, club: 'Manchester United' },
-  { name: 'Rafael Leão', team: 'Portugal', position: 'FW', goals: 2, assists: 1, xG: 1.9, minutes: 230, passAccuracy: 77, age: 25, club: 'AC Milan' },
-  { name: 'Virgil van Dijk', team: 'Netherlands', position: 'DF', goals: 1, assists: 0, xG: 0.7, minutes: 270, passAccuracy: 90, age: 33, club: 'Liverpool' },
-  { name: 'Memphis Depay', team: 'Netherlands', position: 'FW', goals: 3, assists: 1, xG: 2.6, minutes: 240, passAccuracy: 76, age: 30, club: 'Corinthians' },
-  { name: 'Frenkie de Jong', team: 'Netherlands', position: 'MF', goals: 0, assists: 3, xG: 0.4, minutes: 262, passAccuracy: 93, age: 27, club: 'Barcelona' },
-  { name: 'Kevin De Bruyne', team: 'Belgium', position: 'MF', goals: 1, assists: 4, xG: 1.2, minutes: 245, passAccuracy: 88, age: 33, club: 'Manchester City' },
-  { name: 'Romelu Lukaku', team: 'Belgium', position: 'FW', goals: 3, assists: 0, xG: 2.9, minutes: 255, passAccuracy: 72, age: 31, club: 'Roma' },
-  { name: 'Achraf Hakimi', team: 'Morocco', position: 'DF', goals: 1, assists: 2, xG: 0.6, minutes: 270, passAccuracy: 84, age: 26, club: 'PSG' },
-  { name: 'Sofyan Amrabat', team: 'Morocco', position: 'MF', goals: 0, assists: 1, xG: 0.3, minutes: 260, passAccuracy: 87, age: 28, club: 'Manchester United' },
-  { name: 'Christian Pulisic', team: 'United States', position: 'FW', goals: 3, assists: 2, xG: 2.3, minutes: 268, passAccuracy: 80, age: 26, club: 'AC Milan' },
-  { name: 'Tyler Adams', team: 'United States', position: 'MF', goals: 0, assists: 1, xG: 0.2, minutes: 270, passAccuracy: 85, age: 25, club: 'Bournemouth' },
-  { name: 'Alphonso Davies', team: 'Canada', position: 'DF', goals: 1, assists: 2, xG: 0.5, minutes: 270, passAccuracy: 82, age: 24, club: 'Bayern Munich' },
-  { name: 'Jonathan David', team: 'Canada', position: 'FW', goals: 3, assists: 0, xG: 2.7, minutes: 265, passAccuracy: 75, age: 25, club: 'Lille' },
-  { name: 'Hirving Lozano', team: 'Mexico', position: 'FW', goals: 2, assists: 2, xG: 1.8, minutes: 258, passAccuracy: 78, age: 29, club: 'PSV' },
-  { name: 'Edson Álvarez', team: 'Mexico', position: 'MF', goals: 0, assists: 1, xG: 0.3, minutes: 270, passAccuracy: 86, age: 27, club: 'West Ham' },
-  { name: 'Son Heung-min', team: 'South Korea', position: 'FW', goals: 2, assists: 1, xG: 2.0, minutes: 270, passAccuracy: 79, age: 33, club: 'Tottenham' },
-  { name: 'Kim Min-jae', team: 'South Korea', position: 'DF', goals: 0, assists: 0, xG: 0.2, minutes: 270, passAccuracy: 88, age: 28, club: 'Bayern Munich' },
-  { name: 'Sadio Mané', team: 'Senegal', position: 'FW', goals: 3, assists: 1, xG: 2.4, minutes: 262, passAccuracy: 77, age: 32, club: 'Al Nassr' },
-  { name: 'Luis Díaz', team: 'Colombia', position: 'FW', goals: 3, assists: 2, xG: 2.5, minutes: 268, passAccuracy: 80, age: 27, club: 'Liverpool' },
-  { name: 'James Rodríguez', team: 'Colombia', position: 'MF', goals: 1, assists: 3, xG: 0.9, minutes: 245, passAccuracy: 86, age: 33, club: 'León' },
-  { name: 'Luka Modrić', team: 'Croatia', position: 'MF', goals: 1, assists: 2, xG: 0.6, minutes: 250, passAccuracy: 90, age: 39, club: 'Real Madrid' },
-  { name: 'Federico Chiesa', team: 'Italy', position: 'FW', goals: 2, assists: 1, xG: 1.7, minutes: 240, passAccuracy: 78, age: 27, club: 'Liverpool' },
-  { name: 'Nicolas Jackson', team: 'Senegal', position: 'FW', goals: 2, assists: 0, xG: 1.9, minutes: 230, passAccuracy: 73, age: 23, club: 'Chelsea' },
-  { name: 'Takumi Minamino', team: 'Japan', position: 'FW', goals: 2, assists: 1, xG: 1.6, minutes: 255, passAccuracy: 81, age: 29, club: 'Monaco' },
-  { name: 'Moisés Caicedo', team: 'Ecuador', position: 'MF', goals: 1, assists: 2, xG: 0.8, minutes: 270, passAccuracy: 88, age: 23, club: 'Chelsea' },
+const SQUAD_PLAYERS: Omit<PlayerRecord, 'group'>[] = [
+  { name: 'Lionel Messi', team: 'Argentina', position: 'FW', goals: 0, assists: 0, xG: 0, minutes: 0, passAccuracy: 87, age: 38, club: 'Inter Miami' },
+  { name: 'Lautaro Martínez', team: 'Argentina', position: 'FW', goals: 0, assists: 0, xG: 0, minutes: 0, passAccuracy: 74, age: 28, club: 'Inter Milan' },
+  { name: 'Emiliano Martínez', team: 'Argentina', position: 'GK', goals: 0, assists: 0, xG: 0, minutes: 0, passAccuracy: 81, age: 32, club: 'Aston Villa' },
+  { name: 'Rodrigo De Paul', team: 'Argentina', position: 'MF', goals: 0, assists: 0, xG: 0, minutes: 0, passAccuracy: 89, age: 30, club: 'Atlético Madrid' },
+  { name: 'Vinícius Jr.', team: 'Brazil', position: 'FW', goals: 0, assists: 0, xG: 0, minutes: 0, passAccuracy: 80, age: 25, club: 'Real Madrid' },
+  { name: 'Rodrygo', team: 'Brazil', position: 'FW', goals: 0, assists: 0, xG: 0, minutes: 0, passAccuracy: 82, age: 24, club: 'Real Madrid' },
+  { name: 'Raphinha', team: 'Brazil', position: 'FW', goals: 0, assists: 0, xG: 0, minutes: 0, passAccuracy: 79, age: 28, club: 'Barcelona' },
+  { name: 'Alisson', team: 'Brazil', position: 'GK', goals: 0, assists: 0, xG: 0, minutes: 0, passAccuracy: 85, age: 32, club: 'Liverpool' },
+  { name: 'Kylian Mbappé', team: 'France', position: 'FW', goals: 0, assists: 0, xG: 0, minutes: 0, passAccuracy: 81, age: 27, club: 'Real Madrid' },
+  { name: 'Antoine Griezmann', team: 'France', position: 'MF', goals: 0, assists: 0, xG: 0, minutes: 0, passAccuracy: 88, age: 34, club: 'Atlético Madrid' },
+  { name: 'Ousmane Dembélé', team: 'France', position: 'FW', goals: 0, assists: 0, xG: 0, minutes: 0, passAccuracy: 76, age: 27, club: 'PSG' },
+  { name: 'William Saliba', team: 'France', position: 'DF', goals: 0, assists: 0, xG: 0, minutes: 0, passAccuracy: 91, age: 24, club: 'Arsenal' },
+  { name: 'Harry Kane', team: 'England', position: 'FW', goals: 0, assists: 0, xG: 0, minutes: 0, passAccuracy: 77, age: 32, club: 'Bayern Munich' },
+  { name: 'Bukayo Saka', team: 'England', position: 'FW', goals: 0, assists: 0, xG: 0, minutes: 0, passAccuracy: 83, age: 24, club: 'Arsenal' },
+  { name: 'Jude Bellingham', team: 'England', position: 'MF', goals: 0, assists: 0, xG: 0, minutes: 0, passAccuracy: 86, age: 22, club: 'Real Madrid' },
+  { name: 'Declan Rice', team: 'England', position: 'MF', goals: 0, assists: 0, xG: 0, minutes: 0, passAccuracy: 90, age: 26, club: 'Arsenal' },
+  { name: 'Lamine Yamal', team: 'Spain', position: 'FW', goals: 0, assists: 0, xG: 0, minutes: 0, passAccuracy: 84, age: 18, club: 'Barcelona' },
+  { name: 'Pedri', team: 'Spain', position: 'MF', goals: 0, assists: 0, xG: 0, minutes: 0, passAccuracy: 92, age: 22, club: 'Barcelona' },
+  { name: 'Rodri', team: 'Spain', position: 'MF', goals: 0, assists: 0, xG: 0, minutes: 0, passAccuracy: 94, age: 28, club: 'Manchester City' },
+  { name: 'Jamal Musiala', team: 'Germany', position: 'MF', goals: 0, assists: 0, xG: 0, minutes: 0, passAccuracy: 86, age: 22, club: 'Bayern Munich' },
+  { name: 'Florian Wirtz', team: 'Germany', position: 'MF', goals: 0, assists: 0, xG: 0, minutes: 0, passAccuracy: 85, age: 22, club: 'Bayer Leverkusen' },
+  { name: 'Joshua Kimmich', team: 'Germany', position: 'MF', goals: 0, assists: 0, xG: 0, minutes: 0, passAccuracy: 91, age: 30, club: 'Bayern Munich' },
+  { name: 'Cristiano Ronaldo', team: 'Portugal', position: 'FW', goals: 0, assists: 0, xG: 0, minutes: 0, passAccuracy: 78, age: 40, club: 'Al Nassr' },
+  { name: 'Bruno Fernandes', team: 'Portugal', position: 'MF', goals: 0, assists: 0, xG: 0, minutes: 0, passAccuracy: 84, age: 30, club: 'Manchester United' },
+  { name: 'Rafael Leão', team: 'Portugal', position: 'FW', goals: 0, assists: 0, xG: 0, minutes: 0, passAccuracy: 77, age: 25, club: 'AC Milan' },
+  { name: 'Virgil van Dijk', team: 'Netherlands', position: 'DF', goals: 0, assists: 0, xG: 0, minutes: 0, passAccuracy: 90, age: 33, club: 'Liverpool' },
+  { name: 'Memphis Depay', team: 'Netherlands', position: 'FW', goals: 0, assists: 0, xG: 0, minutes: 0, passAccuracy: 76, age: 30, club: 'Corinthians' },
+  { name: 'Frenkie de Jong', team: 'Netherlands', position: 'MF', goals: 0, assists: 0, xG: 0, minutes: 0, passAccuracy: 93, age: 27, club: 'Barcelona' },
+  { name: 'Kevin De Bruyne', team: 'Belgium', position: 'MF', goals: 0, assists: 0, xG: 0, minutes: 0, passAccuracy: 88, age: 33, club: 'Manchester City' },
+  { name: 'Romelu Lukaku', team: 'Belgium', position: 'FW', goals: 0, assists: 0, xG: 0, minutes: 0, passAccuracy: 72, age: 31, club: 'Roma' },
+  { name: 'Achraf Hakimi', team: 'Morocco', position: 'DF', goals: 0, assists: 0, xG: 0, minutes: 0, passAccuracy: 84, age: 26, club: 'PSG' },
+  { name: 'Sofyan Amrabat', team: 'Morocco', position: 'MF', goals: 0, assists: 0, xG: 0, minutes: 0, passAccuracy: 87, age: 28, club: 'Manchester United' },
+  { name: 'Christian Pulisic', team: 'United States', position: 'FW', goals: 0, assists: 0, xG: 0, minutes: 0, passAccuracy: 80, age: 26, club: 'AC Milan' },
+  { name: 'Tyler Adams', team: 'United States', position: 'MF', goals: 0, assists: 0, xG: 0, minutes: 0, passAccuracy: 85, age: 25, club: 'Bournemouth' },
+  { name: 'Alphonso Davies', team: 'Canada', position: 'DF', goals: 0, assists: 0, xG: 0, minutes: 0, passAccuracy: 82, age: 24, club: 'Bayern Munich' },
+  { name: 'Jonathan David', team: 'Canada', position: 'FW', goals: 0, assists: 0, xG: 0, minutes: 0, passAccuracy: 75, age: 25, club: 'Lille' },
+  { name: 'Hirving Lozano', team: 'Mexico', position: 'FW', goals: 0, assists: 0, xG: 0, minutes: 0, passAccuracy: 78, age: 29, club: 'PSV' },
+  { name: 'Edson Álvarez', team: 'Mexico', position: 'MF', goals: 0, assists: 0, xG: 0, minutes: 0, passAccuracy: 86, age: 27, club: 'West Ham' },
+  { name: 'Son Heung-min', team: 'South Korea', position: 'FW', goals: 0, assists: 0, xG: 0, minutes: 0, passAccuracy: 79, age: 33, club: 'Tottenham' },
+  { name: 'Kim Min-jae', team: 'South Korea', position: 'DF', goals: 0, assists: 0, xG: 0, minutes: 0, passAccuracy: 88, age: 28, club: 'Bayern Munich' },
+  { name: 'Sadio Mané', team: 'Senegal', position: 'FW', goals: 0, assists: 0, xG: 0, minutes: 0, passAccuracy: 77, age: 32, club: 'Al Nassr' },
+  { name: 'Luis Díaz', team: 'Colombia', position: 'FW', goals: 0, assists: 0, xG: 0, minutes: 0, passAccuracy: 80, age: 27, club: 'Liverpool' },
+  { name: 'James Rodríguez', team: 'Colombia', position: 'MF', goals: 0, assists: 0, xG: 0, minutes: 0, passAccuracy: 86, age: 33, club: 'León' },
+  { name: 'Luka Modrić', team: 'Croatia', position: 'MF', goals: 0, assists: 0, xG: 0, minutes: 0, passAccuracy: 90, age: 39, club: 'Real Madrid' },
+  { name: 'Federico Chiesa', team: 'Italy', position: 'FW', goals: 0, assists: 0, xG: 0, minutes: 0, passAccuracy: 78, age: 27, club: 'Liverpool' },
+  { name: 'Nicolas Jackson', team: 'Senegal', position: 'FW', goals: 0, assists: 0, xG: 0, minutes: 0, passAccuracy: 73, age: 23, club: 'Chelsea' },
+  { name: 'Takumi Minamino', team: 'Japan', position: 'FW', goals: 0, assists: 0, xG: 0, minutes: 0, passAccuracy: 81, age: 29, club: 'Monaco' },
+  { name: 'Moisés Caicedo', team: 'Ecuador', position: 'MF', goals: 0, assists: 0, xG: 0, minutes: 0, passAccuracy: 88, age: 23, club: 'Chelsea' },
 ]
 
-/** Pre-set group stage results — MD1–MD3 for all 12 groups */
-const GROUP_RESULTS: Record<string, [string, string, number, number][]> = {
+/** Group stage fixtures — MD1–MD3 for all 12 groups (no results until synced) */
+const GROUP_FIXTURES: Record<string, [string, string][]> = {
+  A: [
+    ['Mexico', 'South Africa'], ['South Korea', 'Denmark'],
+    ['Denmark', 'Mexico'], ['South Africa', 'South Korea'],
+    ['Mexico', 'South Korea'], ['Denmark', 'South Africa'],
+  ],
+  B: [
+    ['Canada', 'Switzerland'], ['Qatar', 'Italy'],
+    ['Italy', 'Canada'], ['Switzerland', 'Qatar'],
+    ['Canada', 'Qatar'], ['Italy', 'Switzerland'],
+  ],
+  C: [
+    ['Brazil', 'Morocco'], ['Haiti', 'Scotland'],
+    ['Scotland', 'Brazil'], ['Morocco', 'Haiti'],
+    ['Brazil', 'Haiti'], ['Morocco', 'Scotland'],
+  ],
+  D: [
+    ['United States', 'Paraguay'], ['Australia', 'Turkey'],
+    ['Turkey', 'United States'], ['Paraguay', 'Australia'],
+    ['United States', 'Australia'], ['Turkey', 'Paraguay'],
+  ],
+  E: [
+    ['Germany', 'Curaçao'], ['Ivory Coast', 'Ecuador'],
+    ['Ecuador', 'Germany'], ['Curaçao', 'Ivory Coast'],
+    ['Germany', 'Ivory Coast'], ['Ecuador', 'Curaçao'],
+  ],
+  F: [
+    ['Netherlands', 'Japan'], ['Ukraine', 'Tunisia'],
+    ['Tunisia', 'Netherlands'], ['Japan', 'Ukraine'],
+    ['Netherlands', 'Ukraine'], ['Japan', 'Tunisia'],
+  ],
+  G: [
+    ['Belgium', 'Iran'], ['New Zealand', 'Egypt'],
+    ['Egypt', 'Belgium'], ['Iran', 'New Zealand'],
+    ['Belgium', 'New Zealand'], ['Egypt', 'Iran'],
+  ],
+  H: [
+    ['Spain', 'Cape Verde'], ['Saudi Arabia', 'Uruguay'],
+    ['Uruguay', 'Spain'], ['Cape Verde', 'Saudi Arabia'],
+    ['Spain', 'Saudi Arabia'], ['Uruguay', 'Cape Verde'],
+  ],
+  I: [
+    ['France', 'Senegal'], ['Bolivia', 'Norway'],
+    ['Norway', 'France'], ['Senegal', 'Bolivia'],
+    ['France', 'Bolivia'], ['Senegal', 'Norway'],
+  ],
+  J: [
+    ['Argentina', 'Algeria'], ['Austria', 'Jordan'],
+    ['Jordan', 'Argentina'], ['Algeria', 'Austria'],
+    ['Argentina', 'Austria'], ['Algeria', 'Jordan'],
+  ],
+  K: [
+    ['Portugal', 'Uzbekistan'], ['Colombia', 'Czech Republic'],
+    ['Czech Republic', 'Portugal'], ['Uzbekistan', 'Colombia'],
+    ['Portugal', 'Colombia'], ['Czech Republic', 'Uzbekistan'],
+  ],
+  L: [
+    ['England', 'Ghana'], ['Panama', 'Croatia'],
+    ['Croatia', 'England'], ['Ghana', 'Panama'],
+    ['England', 'Panama'], ['Croatia', 'Ghana'],
+  ],
+}
+
+const H2H_DATA: H2HRecord[] = [
+  { team1: 'Brazil', team2: 'France', totalMatches: 12, team1Wins: 5, team2Wins: 4, draws: 3, lastFive: [{ date: '2022-11-26', result: '2-1 Brazil', competition: 'World Cup' }, { date: '2021-06-08', result: '3-0 France', competition: 'Friendly' }, { date: '2018-07-07', result: '2-1 France', competition: 'World Cup' }] },
+  { team1: 'Argentina', team2: 'Germany', totalMatches: 8, team1Wins: 3, team2Wins: 3, draws: 2, lastFive: [{ date: '2014-07-13', result: '1-0 Germany', competition: 'World Cup Final' }, { date: '2023-10-18', result: '2-2 Draw', competition: 'Friendly' }] },
+  { team1: 'Argentina', team2: 'Brazil', totalMatches: 15, team1Wins: 5, team2Wins: 7, draws: 3, lastFive: [{ date: '2023-11-21', result: '1-0 Argentina', competition: 'World Cup Qualifier' }, { date: '2021-07-10', result: '1-0 Argentina', competition: 'Copa América Final' }] },
+  { team1: 'England', team2: 'Germany', totalMatches: 14, team1Wins: 5, team2Wins: 4, draws: 5, lastFive: [{ date: '2021-06-29', result: '2-0 Germany', competition: 'Euro 2020' }, { date: '2017-11-10', result: '0-0 Draw', competition: 'Friendly' }] },
+  { team1: 'Spain', team2: 'Netherlands', totalMatches: 10, team1Wins: 4, team2Wins: 3, draws: 3, lastFive: [{ date: '2014-06-13', result: '5-1 Netherlands', competition: 'World Cup' }] },
+  { team1: 'Mexico', team2: 'United States', totalMatches: 18, team1Wins: 7, team2Wins: 6, draws: 5, lastFive: [{ date: '2024-03-24', result: '2-0 Mexico', competition: 'CONCACAF Nations League' }, { date: '2023-10-22', result: '2-3 USA', competition: 'Friendly' }] },
+  { team1: 'Portugal', team2: 'Spain', totalMatches: 9, team1Wins: 3, team2Wins: 4, draws: 2, lastFive: [{ date: '2022-09-27', result: '1-0 Spain', competition: 'Nations League' }] },
+  { team1: 'Morocco', team2: 'Spain', totalMatches: 5, team1Wins: 1, team2Wins: 3, draws: 1, lastFive: [{ date: '2022-12-06', result: '0-0 (3-0 pens) Morocco', competition: 'World Cup' }] },
+]
+
+function teamGroup(name: string): string {
+  for (const [g, teams] of Object.entries(GROUPS_2026)) {
+    if (teams.includes(name)) return g
+  }
+  return '?'
+}
+
+function buildStandings(): TeamRecord[] {
+  const stats = new Map<string, TeamRecord>()
+
+  for (const [group, teams] of Object.entries(GROUPS_2026)) {
+    for (const name of teams) {
+      stats.set(name, {
+        name,
+        group,
+        confederation: CONFEDERATION[name] ?? 'OTHER',
+        fifaRank: FIFA_RANK[name] ?? 50,
+        played: 0, wins: 0, draws: 0, losses: 0,
+        goalsFor: 0, goalsAgainst: 0, points: 0,
+        possession: 50, form: [],
+        shotsOnTarget: 0, cleanSheets: 0,
+        coach: COACHES[name] ?? 'TBD',
+        keyPlayer: SQUAD_PLAYERS.find((p) => p.team === name)?.name ?? name,
+      })
+    }
+  }
+
+  return Array.from(stats.values()).sort((a, b) => a.group.localeCompare(b.group) || a.name.localeCompare(b.name))
+}
+
+function buildMatches(): MatchRecord[] {
+  const matches: MatchRecord[] = []
+  const baseDate = new Date('2026-06-11T18:00:00Z')
+  let dayOffset = 0
+
+  for (const [group, fixtures] of Object.entries(GROUP_FIXTURES)) {
+    fixtures.forEach(([home, away], idx) => {
+      const matchday = Math.floor(idx / 2) + 1
+      const venue = VENUES[(dayOffset + idx) % VENUES.length]
+      matches.push({
+        homeTeam: home,
+        awayTeam: away,
+        score: { home: 0, away: 0 },
+        status: 'scheduled',
+        date: new Date(baseDate.getTime() + (dayOffset + idx) * 86400000 * 0.5),
+        stage: 'group',
+        group,
+        matchday,
+        venue: venue.venue,
+        city: venue.city,
+        stats: {
+          possession: { home: 50, away: 50 },
+          shots: { home: 0, away: 0 },
+          xG: { home: 0, away: 0 },
+        },
+      })
+    })
+    dayOffset += 2
+  }
+
+  return matches.sort((a, b) => a.date.getTime() - b.date.getTime())
+}
+
+function buildPlayers(): PlayerRecord[] {
+  return SQUAD_PLAYERS.map((p) => ({ ...p, group: teamGroup(p.team) }))
+}
+
+/** Illustrative squad stats for preview mockup (before World Cup kickoff) */
+const PREVIEW_SQUAD_PLAYERS: Omit<PlayerRecord, 'group'>[] = [
+  { name: 'Lionel Messi', team: 'Argentina', position: 'FW', goals: 3, assists: 4, xG: 2.8, minutes: 251, passAccuracy: 87, age: 38, club: 'Inter Miami' },
+  { name: 'Lautaro Martínez', team: 'Argentina', position: 'FW', goals: 4, assists: 1, xG: 3.1, minutes: 264, passAccuracy: 74, age: 28, club: 'Inter Milan' },
+  { name: 'Kylian Mbappé', team: 'France', position: 'FW', goals: 5, assists: 2, xG: 4.2, minutes: 270, passAccuracy: 81, age: 27, club: 'Real Madrid' },
+  { name: 'Harry Kane', team: 'England', position: 'FW', goals: 4, assists: 1, xG: 3.8, minutes: 270, passAccuracy: 77, age: 32, club: 'Bayern Munich' },
+  { name: 'Vinícius Jr.', team: 'Brazil', position: 'FW', goals: 4, assists: 2, xG: 3.6, minutes: 268, passAccuracy: 80, age: 25, club: 'Real Madrid' },
+  { name: 'Bukayo Saka', team: 'England', position: 'FW', goals: 3, assists: 2, xG: 2.2, minutes: 265, passAccuracy: 83, age: 24, club: 'Arsenal' },
+  { name: 'Lamine Yamal', team: 'Spain', position: 'FW', goals: 3, assists: 3, xG: 2.5, minutes: 255, passAccuracy: 84, age: 18, club: 'Barcelona' },
+  { name: 'Christian Pulisic', team: 'United States', position: 'FW', goals: 3, assists: 2, xG: 2.3, minutes: 268, passAccuracy: 80, age: 26, club: 'AC Milan' },
+  { name: 'Sadio Mané', team: 'Senegal', position: 'FW', goals: 3, assists: 1, xG: 2.4, minutes: 262, passAccuracy: 77, age: 32, club: 'Al Nassr' },
+  { name: 'Luis Díaz', team: 'Colombia', position: 'FW', goals: 3, assists: 2, xG: 2.5, minutes: 268, passAccuracy: 80, age: 27, club: 'Liverpool' },
+  ...SQUAD_PLAYERS.filter(
+    (p) =>
+      ![
+        'Lionel Messi',
+        'Lautaro Martínez',
+        'Kylian Mbappé',
+        'Harry Kane',
+        'Vinícius Jr.',
+        'Bukayo Saka',
+        'Lamine Yamal',
+        'Christian Pulisic',
+        'Sadio Mané',
+        'Luis Díaz',
+      ].includes(p.name)
+  ).map((p) => ({
+    ...p,
+    goals: p.goals || 1,
+    assists: p.assists || 0,
+    xG: 0.8,
+    minutes: 180,
+  })),
+]
+
+const PREVIEW_GROUP_RESULTS: Record<string, [string, string, number, number][]> = {
   A: [
     ['Mexico', 'South Africa', 2, 0], ['South Korea', 'Denmark', 1, 1],
     ['Denmark', 'Mexico', 0, 1], ['South Africa', 'South Korea', 1, 2],
     ['Mexico', 'South Korea', 2, 1], ['Denmark', 'South Africa', 3, 0],
+  ],
+  I: [
+    ['France', 'Senegal', 2, 0], ['Bolivia', 'Norway', 0, 1],
+    ['Norway', 'France', 1, 1], ['Senegal', 'Bolivia', 3, 0],
+    ['France', 'Bolivia', 4, 0], ['Senegal', 'Norway', 2, 1],
   ],
   B: [
     ['Canada', 'Switzerland', 1, 1], ['Qatar', 'Italy', 0, 2],
@@ -211,11 +396,6 @@ const GROUP_RESULTS: Record<string, [string, string, number, number][]> = {
     ['Uruguay', 'Spain', 1, 2], ['Cape Verde', 'Saudi Arabia', 2, 1],
     ['Spain', 'Saudi Arabia', 2, 0], ['Uruguay', 'Cape Verde', 4, 0],
   ],
-  I: [
-    ['France', 'Senegal', 2, 0], ['Bolivia', 'Norway', 0, 1],
-    ['Norway', 'France', 1, 1], ['Senegal', 'Bolivia', 3, 0],
-    ['France', 'Bolivia', 4, 0], ['Senegal', 'Norway', 2, 1],
-  ],
   J: [
     ['Argentina', 'Algeria', 2, 0], ['Austria', 'Jordan', 3, 1],
     ['Jordan', 'Argentina', 0, 1], ['Algeria', 'Austria', 1, 1],
@@ -233,34 +413,14 @@ const GROUP_RESULTS: Record<string, [string, string, number, number][]> = {
   ],
 }
 
-const KNOCKOUT_MATCHES: Omit<MatchRecord, 'group'>[] = [
-  { homeTeam: 'Brazil', awayTeam: 'Japan', score: { home: 2, away: 0 }, date: new Date('2026-07-01'), stage: 'round-of-16', venue: 'SoFi Stadium', city: 'Los Angeles', matchday: 0, stats: { possession: { home: 58, away: 42 }, shots: { home: 15, away: 6 }, xG: { home: 2.1, away: 0.5 } } },
-  { homeTeam: 'France', awayTeam: 'Colombia', score: { home: 3, away: 1 }, date: new Date('2026-07-02'), stage: 'round-of-16', venue: 'Hard Rock Stadium', city: 'Miami', matchday: 0, stats: { possession: { home: 55, away: 45 }, shots: { home: 14, away: 10 }, xG: { home: 2.4, away: 1.1 } } },
-  { homeTeam: 'Argentina', awayTeam: 'Netherlands', score: { home: 2, away: 2 }, date: new Date('2026-07-03'), stage: 'round-of-16', venue: 'AT&T Stadium', city: 'Dallas', matchday: 0, stats: { possession: { home: 48, away: 52 }, shots: { home: 11, away: 13 }, xG: { home: 1.8, away: 2.0 } } },
-  { homeTeam: 'England', awayTeam: 'Germany', score: { home: 1, away: 0 }, date: new Date('2026-07-04'), stage: 'round-of-16', venue: 'MetLife Stadium', city: 'New York/New Jersey', matchday: 0, stats: { possession: { home: 46, away: 54 }, shots: { home: 9, away: 12 }, xG: { home: 1.2, away: 1.4 } } },
-  { homeTeam: 'Brazil', awayTeam: 'France', score: { home: 2, away: 1 }, date: new Date('2026-07-09'), stage: 'quarter', venue: 'Estadio Azteca', city: 'Mexico City', matchday: 0, stats: { possession: { home: 52, away: 48 }, shots: { home: 13, away: 11 }, xG: { home: 1.9, away: 1.3 } } },
-  { homeTeam: 'Argentina', awayTeam: 'England', score: { home: 1, away: 0 }, date: new Date('2026-07-10'), stage: 'quarter', venue: 'Mercedes-Benz Stadium', city: 'Atlanta', matchday: 0, stats: { possession: { home: 44, away: 56 }, shots: { home: 8, away: 14 }, xG: { home: 1.1, away: 1.5 } } },
+const PREVIEW_KNOCKOUT_MATCHES: Omit<MatchRecord, 'group'>[] = [
+  { homeTeam: 'Brazil', awayTeam: 'Japan', score: { home: 2, away: 0 }, status: 'finished', date: new Date('2026-07-01'), stage: 'round-of-16', venue: 'SoFi Stadium', city: 'Los Angeles', matchday: 0, stats: { possession: { home: 58, away: 42 }, shots: { home: 15, away: 6 }, xG: { home: 2.1, away: 0.5 } } },
+  { homeTeam: 'France', awayTeam: 'Colombia', score: { home: 3, away: 1 }, status: 'finished', date: new Date('2026-07-02'), stage: 'round-of-16', venue: 'Hard Rock Stadium', city: 'Miami', matchday: 0, stats: { possession: { home: 55, away: 45 }, shots: { home: 14, away: 10 }, xG: { home: 2.4, away: 1.1 } } },
+  { homeTeam: 'Argentina', awayTeam: 'Netherlands', score: { home: 2, away: 2 }, status: 'finished', date: new Date('2026-07-03'), stage: 'round-of-16', venue: 'AT&T Stadium', city: 'Dallas', matchday: 0, stats: { possession: { home: 48, away: 52 }, shots: { home: 11, away: 13 }, xG: { home: 1.8, away: 2.0 } } },
+  { homeTeam: 'Brazil', awayTeam: 'France', score: { home: 2, away: 1 }, status: 'finished', date: new Date('2026-07-09'), stage: 'quarter', venue: 'Estadio Azteca', city: 'Mexico City', matchday: 0, stats: { possession: { home: 52, away: 48 }, shots: { home: 13, away: 11 }, xG: { home: 1.9, away: 1.3 } } },
 ]
 
-const H2H_DATA: H2HRecord[] = [
-  { team1: 'Brazil', team2: 'France', totalMatches: 12, team1Wins: 5, team2Wins: 4, draws: 3, lastFive: [{ date: '2022-11-26', result: '2-1 Brazil', competition: 'World Cup' }, { date: '2021-06-08', result: '3-0 France', competition: 'Friendly' }, { date: '2018-07-07', result: '2-1 France', competition: 'World Cup' }] },
-  { team1: 'Argentina', team2: 'Germany', totalMatches: 8, team1Wins: 3, team2Wins: 3, draws: 2, lastFive: [{ date: '2014-07-13', result: '1-0 Germany', competition: 'World Cup Final' }, { date: '2023-10-18', result: '2-2 Draw', competition: 'Friendly' }] },
-  { team1: 'Argentina', team2: 'Brazil', totalMatches: 15, team1Wins: 5, team2Wins: 7, draws: 3, lastFive: [{ date: '2023-11-21', result: '1-0 Argentina', competition: 'World Cup Qualifier' }, { date: '2021-07-10', result: '1-0 Argentina', competition: 'Copa América Final' }] },
-  { team1: 'England', team2: 'Germany', totalMatches: 14, team1Wins: 5, team2Wins: 4, draws: 5, lastFive: [{ date: '2021-06-29', result: '2-0 Germany', competition: 'Euro 2020' }, { date: '2017-11-10', result: '0-0 Draw', competition: 'Friendly' }] },
-  { team1: 'Spain', team2: 'Netherlands', totalMatches: 10, team1Wins: 4, team2Wins: 3, draws: 3, lastFive: [{ date: '2014-06-13', result: '5-1 Netherlands', competition: 'World Cup' }] },
-  { team1: 'Mexico', team2: 'United States', totalMatches: 18, team1Wins: 7, team2Wins: 6, draws: 5, lastFive: [{ date: '2024-03-24', result: '2-0 Mexico', competition: 'CONCACAF Nations League' }, { date: '2023-10-22', result: '2-3 USA', competition: 'Friendly' }] },
-  { team1: 'Portugal', team2: 'Spain', totalMatches: 9, team1Wins: 3, team2Wins: 4, draws: 2, lastFive: [{ date: '2022-09-27', result: '1-0 Spain', competition: 'Nations League' }] },
-  { team1: 'Morocco', team2: 'Spain', totalMatches: 5, team1Wins: 1, team2Wins: 3, draws: 1, lastFive: [{ date: '2022-12-06', result: '0-0 (3-0 pens) Morocco', competition: 'World Cup' }] },
-]
-
-function teamGroup(name: string): string {
-  for (const [g, teams] of Object.entries(GROUPS_2026)) {
-    if (teams.includes(name)) return g
-  }
-  return '?'
-}
-
-function buildStandings(): TeamRecord[] {
+function buildPreviewStandings(): TeamRecord[] {
   const stats = new Map<string, TeamRecord>()
 
   for (const [group, teams] of Object.entries(GROUPS_2026)) {
@@ -275,21 +435,18 @@ function buildStandings(): TeamRecord[] {
         possession: 50, form: [],
         shotsOnTarget: 0, cleanSheets: 0,
         coach: COACHES[name] ?? 'TBD',
-        keyPlayer: RAW_PLAYERS.find((p) => p.team === name)?.name ?? name,
+        keyPlayer: PREVIEW_SQUAD_PLAYERS.find((p) => p.team === name)?.name ?? name,
       })
     }
   }
 
-  for (const [group, results] of Object.entries(GROUP_RESULTS)) {
-    results.forEach(([home, away, hg, ag], i) => {
+  for (const results of Object.values(PREVIEW_GROUP_RESULTS)) {
+    results.forEach(([home, away, hg, ag]) => {
       const h = stats.get(home)!
       const a = stats.get(away)!
       h.played++; a.played++
       h.goalsFor += hg; h.goalsAgainst += ag
       a.goalsFor += ag; a.goalsAgainst += hg
-      h.shotsOnTarget += hg * 3 + 4
-      a.shotsOnTarget += ag * 3 + 3
-
       if (hg > ag) {
         h.wins++; h.points += 3; a.losses++
         h.form.push('W'); a.form.push('L')
@@ -300,37 +457,34 @@ function buildStandings(): TeamRecord[] {
         h.draws++; a.draws++; h.points++; a.points++
         h.form.push('D'); a.form.push('D')
       }
-      if (ag === 0) h.cleanSheets++
-      if (hg === 0) a.cleanSheets++
-
-      const rankDiff = (FIFA_RANK[home] ?? 30) - (FIFA_RANK[away] ?? 30)
-      h.possession = Math.min(68, Math.max(38, 50 + rankDiff * 0.4 + (hg - ag) * 3))
-      a.possession = 100 - h.possession
     })
   }
 
   return Array.from(stats.values()).sort((a, b) => a.group.localeCompare(b.group) || b.points - a.points)
 }
 
-function buildMatches(): MatchRecord[] {
+function buildPreviewMatches(): MatchRecord[] {
   const matches: MatchRecord[] = []
   const baseDate = new Date('2026-06-11T18:00:00Z')
   let dayOffset = 0
 
-  for (const [group, results] of Object.entries(GROUP_RESULTS)) {
+  for (const [group, results] of Object.entries(PREVIEW_GROUP_RESULTS)) {
     results.forEach(([home, away, hg, ag], idx) => {
       const matchday = Math.floor(idx / 2) + 1
       const venue = VENUES[(dayOffset + idx) % VENUES.length]
-      const rankDiff = (FIFA_RANK[home] ?? 30) - (FIFA_RANK[away] ?? 30)
-      const homePoss = Math.min(65, Math.max(40, 52 + rankDiff * 0.3))
       matches.push({
-        homeTeam: home, awayTeam: away,
+        homeTeam: home,
+        awayTeam: away,
         score: { home: hg, away: ag },
+        status: 'finished',
         date: new Date(baseDate.getTime() + (dayOffset + idx) * 86400000 * 0.5),
-        stage: 'group', group, matchday,
-        venue: venue.venue, city: venue.city,
+        stage: 'group',
+        group,
+        matchday,
+        venue: venue.venue,
+        city: venue.city,
         stats: {
-          possession: { home: homePoss, away: 100 - homePoss },
+          possession: { home: 52, away: 48 },
           shots: { home: hg * 4 + 6, away: ag * 4 + 5 },
           xG: { home: hg * 0.7 + 0.5, away: ag * 0.7 + 0.4 },
         },
@@ -339,43 +493,99 @@ function buildMatches(): MatchRecord[] {
     dayOffset += 2
   }
 
-  for (const km of KNOCKOUT_MATCHES) {
+  for (const km of PREVIEW_KNOCKOUT_MATCHES) {
     matches.push({ ...km, group: null })
   }
 
   return matches.sort((a, b) => a.date.getTime() - b.date.getTime())
 }
 
-function buildPlayers(): PlayerRecord[] {
-  return RAW_PLAYERS.map((p) => ({ ...p, group: teamGroup(p.team) }))
+function buildPreviewPlayers(): PlayerRecord[] {
+  return PREVIEW_SQUAD_PLAYERS.map((p) => ({ ...p, group: teamGroup(p.team) }))
 }
 
-export const WC2026_TEAMS = buildStandings()
-export const WC2026_PLAYERS = buildPlayers()
-export const WC2026_MATCHES = buildMatches()
+const LIVE_TEAMS = buildStandings()
+const LIVE_PLAYERS = buildPlayers()
+const LIVE_MATCHES = buildMatches()
+
+const PREVIEW_TEAMS = buildPreviewStandings()
+const PREVIEW_PLAYERS = buildPreviewPlayers()
+const PREVIEW_MATCHES = buildPreviewMatches()
+
+export function getActiveTeams() {
+  return isPreviewMode() ? PREVIEW_TEAMS : LIVE_TEAMS
+}
+
+export function getActivePlayers() {
+  return isPreviewMode() ? PREVIEW_PLAYERS : LIVE_PLAYERS
+}
+
+export function getActiveMatches() {
+  return isPreviewMode() ? PREVIEW_MATCHES : LIVE_MATCHES
+}
+
+export function getSeedDataset() {
+  const preview = isPreviewMode()
+  return {
+    teams: preview ? PREVIEW_TEAMS : LIVE_TEAMS,
+    players: preview ? PREVIEW_PLAYERS : LIVE_PLAYERS,
+    matches: preview ? PREVIEW_MATCHES : LIVE_MATCHES,
+    h2h: H2H_DATA,
+    tournament: {
+      name: 'FIFA World Cup 2026',
+      hosts: ['United States', 'Mexico', 'Canada'],
+      teams: 48,
+      groups: 12,
+      format: '12 groups of 4 → Round of 32',
+      startDate: '2026-06-11',
+      endDate: '2026-07-19',
+      currentStage: preview ? 'preview-mockup' : 'live',
+      dataMode: getTournamentDataMode(),
+      venues: VENUES.length,
+      dataNote: preview
+        ? 'Illustrative preview mockup — clearly labeled until kickoff; replaced by synced results after 11 Jun 2026'
+        : 'Live tournament data — updated via npm run sync / admin agent',
+    },
+  }
+}
+
+export const WC2026_TEAMS = LIVE_TEAMS
+export const WC2026_PLAYERS = LIVE_PLAYERS
+export const WC2026_MATCHES = LIVE_MATCHES
 export const WC2026_H2H = H2H_DATA
+export const WC2026_TOURNAMENT = getSeedDataset().tournament
 
-export const WC2026_TOURNAMENT = {
-  name: 'FIFA World Cup 2026',
-  hosts: ['United States', 'Mexico', 'Canada'],
-  teams: 48,
-  groups: 12,
-  format: '12 groups of 4 → Round of 32',
-  startDate: '2026-06-11',
-  endDate: '2026-07-19',
-  currentStage: 'quarter-finals',
-  venues: VENUES.length,
-  dataNote: 'Curated tournament intelligence — group results + knockout bracket through quarter-finals',
+function toMockTeams(teams: TeamRecord[]) {
+  return teams.map((t) => ({
+    name: t.name,
+    group: t.group,
+    played: t.played,
+    wins: t.wins,
+    draws: t.draws,
+    losses: t.losses,
+    goalsFor: t.goalsFor,
+    goalsAgainst: t.goalsAgainst,
+    points: t.points,
+    possession: t.possession,
+    form: t.form,
+  }))
 }
 
-/** Legacy exports for mock-data fallback compatibility */
-export const MOCK_TEAMS = WC2026_TEAMS.map((t) => ({
-  name: t.name, group: t.group, played: t.played, wins: t.wins, draws: t.draws, losses: t.losses,
-  goalsFor: t.goalsFor, goalsAgainst: t.goalsAgainst, points: t.points, possession: t.possession, form: t.form,
-}))
-export const MOCK_PLAYERS = WC2026_PLAYERS.map((p) => ({
-  name: p.name, team: p.team, position: p.position, goals: p.goals, assists: p.assists,
-  xG: p.xG, minutes: p.minutes, passAccuracy: p.passAccuracy,
-}))
-export const MOCK_MATCHES = WC2026_MATCHES
-export const MOCK_HEAD_TO_HEAD = WC2026_H2H
+function toMockPlayers(players: PlayerRecord[]) {
+  return players.map((p) => ({
+    name: p.name,
+    team: p.team,
+    position: p.position,
+    goals: p.goals,
+    assists: p.assists,
+    xG: p.xG,
+    minutes: p.minutes,
+    passAccuracy: p.passAccuracy,
+  }))
+}
+
+/** Active mock dataset — preview illustrative data before kickoff, live seed after */
+export const MOCK_TEAMS = toMockTeams(getActiveTeams())
+export const MOCK_PLAYERS = toMockPlayers(getActivePlayers())
+export const MOCK_MATCHES = getActiveMatches()
+export const MOCK_HEAD_TO_HEAD = H2H_DATA

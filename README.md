@@ -22,7 +22,24 @@ Ask it anything:
 
 It classifies intent, queries the MongoDB football intelligence database via MCP, and returns structured analyst-grade responses with key stats, confidence signals, and follow-up suggestions.
 
-> **Data note:** MatchMind uses a curated World Cup 2026 intelligence database in MongoDB Atlas (seeded + optionally updated). It is not a live FIFA broadcast feed.
+> **Data note:** MatchMind is **not** a live FIFA broadcast feed. Before World Cup kickoff (**11 June 2026**), the agent shows **◇ Preview mockup** data — illustrative sample scores and stats stored in MongoDB, clearly labeled in the UI. After kickoff, responses switch to **● Live MongoDB** as real results are synced.
+
+### Data modes
+
+| Mode | When | Badge | What's in MongoDB |
+|---|---|---|---|
+| **Preview mockup** | Before 11 Jun 2026 | ◇ Preview mockup (amber) | Illustrative demo scores, scorers, standings — for UX only |
+| **Live** | On/after kickoff | ● Live MongoDB (green) | Real results via `npm run sync` or admin agent |
+| **Demo** | MongoDB not configured | ○ Demo data | In-memory fallback |
+
+Automatic switch is date-based (`lib/tournament-phase.ts`). Override for testing:
+
+```bash
+FORCE_TOURNAMENT_PREVIEW=true   # always preview mockup
+FORCE_TOURNAMENT_LIVE=true      # always live mode
+```
+
+Re-seed after changing mode: `npm run seed`
 
 ---
 
@@ -41,7 +58,7 @@ Step 2: query_football_data → MongoDB Atlas (MCP tool contract)
         ↓
 Step 3: Gemini reasons over records → structured JSON
         ↓
-Analyst card (headline, analysis, stats, ● Live MongoDB badge)
+Analyst card (headline, analysis, stats, data badge: ◇ Preview mockup / ● Live MongoDB / ○ Demo)
 
 Admin updates (optional):
 /agent/admin → update_match_result / update_player_stats → MongoDB
@@ -90,6 +107,9 @@ npm run seed
 ```
 
 Populates 48 teams, 12 groups, players, matches, and head-to-head records.
+
+- **Before kickoff:** seeds **preview mockup** results (sample scores + knockouts) — `tournament.dataMode: preview`
+- **After kickoff:** seeds **live** fixtures only (scheduled, no fake results) — sync real scores with `npm run sync`
 
 ### Run locally
 
@@ -189,7 +209,8 @@ ADMIN_SECRET=...                # /agent/admin
 
 - **ADK agent** — `query_football_data` tool over MongoDB
 - **Admin agent** — write scores and player stats in plain English
-- **Live data badge** — ● Live MongoDB vs ○ Demo data
+- **Honest data badges** — ◇ Preview mockup (pre-kickoff) · ● Live MongoDB (synced results) · ○ Demo data
+- **Preview banner** — amber notice on `/agent` before World Cup starts
 - **5 question types** — stats, prediction, fantasy, tactical, historical
 - **Stadium Night × Gold UI** — hero, middle, CTA tunnel, and footer backgrounds with gradient scrims
 - **Animated How It Works** — step numbers count up on scroll

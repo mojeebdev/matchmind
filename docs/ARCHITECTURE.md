@@ -38,8 +38,24 @@ The structured response is rendered as an analyst card with:
 - 2–4 paragraph analysis
 - Key stats row (label, value, context)
 - Confidence signal (high/medium/low)
-- **● Live MongoDB** vs **○ Demo data** badge (`live_data` field)
+- Data badge via `preview_data` / `live_data`:
+  - **◇ Preview mockup** — illustrative stats before kickoff (11 Jun 2026)
+  - **● Live MongoDB** — synced real results after kickoff
+  - **○ Demo data** — in-memory fallback when MongoDB is not configured
 - Follow-up question suggestion
+
+---
+
+## Tournament Data Phases (`lib/tournament-phase.ts`)
+
+| Phase | Trigger | Seed content | UI |
+|---|---|---|---|
+| `preview` | `now < 2026-06-11` (or `FORCE_TOURNAMENT_PREVIEW=true`) | Illustrative scores, scorers, sample knockouts | Amber banner + ◇ Preview mockup badge |
+| `live` | On/after kickoff (or `FORCE_TOURNAMENT_LIVE=true`) | Scheduled fixtures; results from sync/admin | ● Live MongoDB badge |
+
+`lib/response-data-mode.ts` applies `preview_data: true`, prepends disclosure text, and sets `live_data: false` during preview mode so the agent never claims mock stats are live FIFA data.
+
+`getSeedDataset()` in `lib/worldcup2026-data.ts` picks preview vs live builders. `npm run seed` writes `tournament.dataMode` to MongoDB.
 
 ---
 
@@ -59,11 +75,11 @@ UI: `/agent/admin`
 
 | Method | Path | Notes |
 |---|---|---|
-| Seed | `npm run seed` | Full reset from `lib/worldcup2026-data.ts` |
+| Seed | `npm run seed` | Full reset — preview mockup before kickoff, live fixtures after |
 | Admin agent | `/agent/admin` | Natural-language writes |
 | Local sync | `npm run sync` | Private `scripts/sync.ts` + `data/sync/feed.json` (gitignored) |
 
-> MatchMind uses a **curated** World Cup 2026 intelligence database — not a live FIFA API feed.
+> Before kickoff: **preview mockup** data (clearly labeled). After kickoff: **live** synced results. Not a FIFA broadcast API feed.
 
 ---
 
@@ -76,7 +92,7 @@ UI: `/agent/admin`
 | `matches` | Fixtures, scores, stage, xG |
 | `headToHead` | Historical meetings |
 | `groups` | Group A–L definitions |
-| `tournament` | Metadata, `lastSyncedAt` |
+| `tournament` | Metadata, `dataMode` (`preview` \| `live`), `lastSyncedAt` |
 
 ---
 
@@ -125,7 +141,9 @@ Gradient scrims (`--scrim-*` in `styles/globals.css`) keep background art visibl
 | MongoDB writes | `lib/mongo-writes.ts` | Match/player updates + standings recalc |
 | Gemini model | `lib/gemini.ts` | `gemini-2.5-flash-lite` |
 | Query safety | `lib/query-safety.ts` | Collection allowlist, write-stage blocking |
-| Response validation | `lib/validation.ts` | Schema normalization + `live_data` passthrough |
+| Tournament phase | `lib/tournament-phase.ts` | Preview vs live date logic + disclosure copy |
+| Response data mode | `lib/response-data-mode.ts` | Preview badges, disclaimers, `live_data` flags |
+| Response validation | `lib/validation.ts` | Schema normalization + `live_data` / `preview_data` |
 | Partial-env fallback | `lib/data-response.ts` | Deterministic MongoDB responses without Gemini |
 
 **Fan data flow:** `runAgent()` → ADK or `processAgentQuestion()` → `mcpQueryFootballData()` → `validateAgentResponse()`

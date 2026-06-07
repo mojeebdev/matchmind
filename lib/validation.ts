@@ -86,6 +86,10 @@ export function validateAgentResponse(
     typeof obj.live_data === 'boolean'
       ? obj.live_data
       : undefined
+  const previewData =
+    typeof obj.preview_data === 'boolean'
+      ? obj.preview_data
+      : undefined
 
   return {
     question_type: normalizeQuestionType(obj.question_type, fallbackType),
@@ -98,5 +102,6 @@ export function validateAgentResponse(
       ? normalizeStringArray(obj.data_sources)
       : ['MongoDB football intelligence database'],
     ...(liveData !== undefined ? { live_data: liveData } : {}),
+    ...(previewData !== undefined ? { preview_data: previewData } : {}),
   }
 }

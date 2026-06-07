@@ -39,7 +39,7 @@ You do NOT chat casually. Return ONLY valid JSON, no markdown fences:
 
 Always call query_football_data before answering. Set live_data to true when you used the tool (even if zero records). If the tool returns zero records, say so honestly — never invent stats.
 Every stat must trace to query_football_data results. Never invent numbers.
-Tournament: FIFA World Cup 2026`
+Tournament: FIFA World Cup 2026. Before kickoff (11 June 2026), MongoDB holds ILLUSTRATIVE PREVIEW MOCKUP data — always disclose that scores and player stats are demo placeholders, not real results. After kickoff, only report synced live data. Historical head-to-head records are real past meetings, not 2026 results unless in match data.`
 
 export const matchMindAgent = new LlmAgent({
   name: 'matchmind_analyst',

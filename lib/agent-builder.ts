@@ -18,6 +18,7 @@ import { validateAgentResponse } from './validation'
 import type { AgentUserContext } from './user-context'
 import { formatUserContextBlock } from './user-context'
 import type { AgentResponse } from './types'
+import { isPreviewMode } from './tournament-phase'
 
 type AdkEvent = {
   content?: {
@@ -95,7 +96,7 @@ function extractJsonPayload(text: string): string {
 }
 
 function resolveLiveData(meta: AdkRunResult): boolean {
-  if (!isMongoConfigured()) return false
+  if (!isMongoConfigured() || isPreviewMode()) return false
   return meta.queriedMongo
 }
 

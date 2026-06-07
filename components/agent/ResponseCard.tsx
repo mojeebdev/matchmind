@@ -8,7 +8,14 @@ export function ResponseCard({ response }: ResponseCardProps) {
   const confidenceClass = `confidence-${response.confidence ?? 'medium'}`
   const keyStats = response.key_stats ?? []
   const dataSources = response.data_sources ?? []
-  const isLive = response.live_data === true
+  const isPreview = response.preview_data === true
+  const isLive = response.live_data === true && !isPreview
+
+  const dataBadge = isPreview
+    ? { label: '◇ Preview mockup', color: '#fbbf24', border: 'rgba(251, 191, 36, 0.45)', bg: 'rgba(251, 191, 36, 0.12)' }
+    : isLive
+      ? { label: '● Live MongoDB', color: '#4ade80', border: 'rgba(74,222,128,0.35)', bg: 'rgba(74,222,128,0.1)' }
+      : { label: '○ Demo data', color: 'var(--ink-secondary)', border: 'var(--gold-border)', bg: 'var(--gold-dim)' }
 
   return (
     <div
@@ -32,12 +39,12 @@ export function ResponseCard({ response }: ResponseCardProps) {
         <span
           className="tag"
           style={{
-            color: isLive ? '#4ade80' : 'var(--ink-secondary)',
-            borderColor: isLive ? 'rgba(74,222,128,0.35)' : 'var(--gold-border)',
-            background: isLive ? 'rgba(74,222,128,0.1)' : 'var(--gold-dim)',
+            color: dataBadge.color,
+            borderColor: dataBadge.border,
+            background: dataBadge.bg,
           }}
         >
-          {isLive ? '● Live MongoDB' : '○ Demo data'}
+          {dataBadge.label}
         </span>
         <span
           className={`tag ${confidenceClass}`}

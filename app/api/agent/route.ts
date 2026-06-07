@@ -8,6 +8,7 @@ import { saveInteraction } from '@/lib/interactions'
 import { buildAgentUserContext } from '@/lib/user-context'
 import { findUserById } from '@/lib/users'
 import { validateAgentResponse } from '@/lib/validation'
+import { applyResponseDataMode } from '@/lib/response-data-mode'
 
 const MAX_QUESTION_LENGTH = 1000
 
@@ -49,7 +50,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const response = await runAgent(trimmed, userContext)
+    const response = applyResponseDataMode(await runAgent(trimmed, userContext))
     const validated = validateAgentResponse(response, 'general')
 
     if (!validated) {
@@ -59,10 +60,13 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const payload =
-      typeof response.live_data === 'boolean'
-        ? { ...validated, live_data: response.live_data }
-        : validated
+    const payload = {
+      ...validated,
+      ...(typeof response.live_data === 'boolean' ? { live_data: response.live_data } : {}),
+      ...(typeof response.preview_data === 'boolean'
+        ? { preview_data: response.preview_data }
+        : {}),
+    }
 
     if (session?.user?.id) {
       await saveInteraction(session.user.id, trimmed, payload).catch((error) => {

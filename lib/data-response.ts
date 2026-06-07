@@ -13,6 +13,7 @@ type PlayerRecord = {
 type TeamRecord = {
   name?: string
   group?: string
+  played?: number
   wins?: number
   draws?: number
   losses?: number
@@ -26,8 +27,11 @@ type MatchRecord = {
   homeTeam?: string
   awayTeam?: string
   score?: { home?: number; away?: number }
+  status?: string
   stage?: string
   group?: string | null
+  matchday?: number
+  date?: string | Date
 }
 
 type H2HRecord = {
@@ -78,12 +82,33 @@ function buildTeamStats(teams: TeamRecord[]): AgentResponse['key_stats'] {
 }
 
 function buildMatchStats(matches: MatchRecord[]): AgentResponse['key_stats'] {
-  return matches.slice(0, 4).map((m) => ({
-    label: `${m.homeTeam ?? '?'} vs ${m.awayTeam ?? '?'}`,
-    value: `${m.score?.home ?? 0}-${m.score?.away ?? 0}`,
-    context: `${m.stage ?? 'match'}${m.group ? ` · Group ${m.group}` : ''}`,
-  }))
+  return matches.slice(0, 4).map((m) => {
+    const scheduled = m.status === 'scheduled'
+    return {
+      label: `${m.homeTeam ?? '?'} vs ${m.awayTeam ?? '?'}`,
+      value: scheduled ? 'Scheduled' : `${m.score?.home ?? 0}-${m.score?.away ?? 0}`,
+      context: `${m.stage ?? 'match'}${m.group ? ` · Group ${m.group}` : ''}${m.matchday ? ` · MD${m.matchday}` : ''}`,
+    }
+  })
 }
+
+function isPreTournamentPlayers(players: PlayerRecord[]): boolean {
+  return players.length > 0 && players.every((p) => (p.goals ?? 0) === 0 && (p.assists ?? 0) === 0)
+}
+
+function isPreTournamentTeams(teams: TeamRecord[]): boolean {
+  return teams.length > 0 && teams.every((t) => (t.played ?? 0) === 0)
+}
+
+function isPreTournamentMatches(matches: MatchRecord[]): boolean {
+  return (
+    matches.length > 0 &&
+    matches.every((m) => (m.status ?? 'scheduled') !== 'finished')
+  )
+}
+
+const PRE_TOURNAMENT_NOTE =
+  'The FIFA World Cup 2026 has not kicked off yet (opening fixtures: 11 June 2026). No competitive match results or player goal totals exist in MongoDB until matches are played and synced.'
 
 function buildH2HStats(records: H2HRecord[]): AgentResponse['key_stats'] {
   return records.slice(0, 4).map((h) => ({
@@ -137,16 +162,35 @@ export function generateResponseFromMongoData(
 
   if (key === 'players' || records[0]?.goals !== undefined) {
     const players = records as PlayerRecord[]
-    const top = players[0]
     const sorted = [...players].sort(
       (a, b) => (b.goals ?? 0) - (a.goals ?? 0)
     )
 
+    if (isPreTournamentPlayers(players)) {
+      const sample = sorted.slice(0, 3)
+      return {
+        question_type: questionType,
+        headline: 'No Tournament Goals Recorded Yet',
+        answer:
+          `${PRE_TOURNAMENT_NOTE}\n\nMatchMind queried ${sourceLabel} and found ${players.length} squad player(s). Every player currently has 0 goals and 0 assists — there is no Golden Boot leader yet.\n\nNotable squad names on file include ${sample.map((p) => `${p.name} (${p.team})`).join(', ')}. Tournament stats will populate after matches finish and results are synced via \`npm run sync\` or the admin agent.`,
+        key_stats: sample.map((p) => ({
+          label: p.name ?? 'Player',
+          value: '0G / 0A',
+          context: `${p.team ?? 'Unknown'} · ${p.position ?? '—'} · awaiting kickoff`,
+        })),
+        confidence: isLiveData ? 'high' : 'medium',
+        follow_up: 'When does the tournament open and which teams are in Group A?',
+        data_sources: [sourceLabel, 'MongoDB squad registry'],
+        live_data: isLiveData,
+      }
+    }
+
+    const top = sorted[0]
     return {
       question_type: questionType,
       headline: `${top.name ?? 'Top Player'} Leads Retrieved Player Dataset`,
       answer:
-        `Based on live data from ${sourceLabel}, ${sorted[0]?.name ?? 'the top scorer'} leads with ${sorted[0]?.goals ?? 0} goals and ${sorted[0]?.assists ?? 0} assists for ${sorted[0]?.team ?? 'their nation'}. MatchMind retrieved ${players.length} player record(s) directly from MongoDB.\n\n${sorted.slice(1, 3).map((p) => `${p.name} (${p.team}): ${p.goals ?? 0} goals, xG ${p.xG ?? 0}`).join('. ')}${sorted.length > 3 ? '.' : ''}\n\nThis response was generated deterministically from database records because the Gemini API is not configured. Configure GEMINI_API_KEY for full analyst narrative generation.`,
+        `Based on live data from ${sourceLabel}, ${top.name ?? 'the top scorer'} leads with ${top.goals ?? 0} goals and ${top.assists ?? 0} assists for ${top.team ?? 'their nation'}. MatchMind retrieved ${players.length} player record(s) directly from MongoDB.\n\n${sorted.slice(1, 3).map((p) => `${p.name} (${p.team}): ${p.goals ?? 0} goals, xG ${p.xG ?? 0}`).join('. ')}${sorted.length > 3 ? '.' : ''}\n\nThis response was generated deterministically from database records because the Gemini API is not configured. Configure GEMINI_API_KEY for full analyst narrative generation.`,
       key_stats: buildPlayerStats(sorted),
       confidence: isLiveData ? 'high' : 'medium',
       follow_up: 'Which players are outperforming their xG?',
@@ -156,8 +200,27 @@ export function generateResponseFromMongoData(
 
   if (key === 'teams' || records[0]?.wins !== undefined) {
     const teams = records as TeamRecord[]
-    const leader = [...teams].sort((a, b) => (b.wins ?? 0) - (a.wins ?? 0))[0]
 
+    if (isPreTournamentTeams(teams)) {
+      const sample = teams.slice(0, 4)
+      return {
+        question_type: questionType,
+        headline: 'Group Standings Not Started Yet',
+        answer:
+          `${PRE_TOURNAMENT_NOTE}\n\nMatchMind pulled ${teams.length} team record(s) from ${sourceLabel}. All teams show 0 played, 0 points, and 0 goals — standings will update only after group-stage matches are completed and synced.\n\nTeams on file: ${sample.map((t) => `${t.name} (Group ${t.group})`).join(', ')}${teams.length > 4 ? ', and others' : ''}.`,
+        key_stats: sample.map((t) => ({
+          label: t.name ?? 'Team',
+          value: `Group ${t.group ?? '—'}`,
+          context: '0 played · 0 pts · awaiting kickoff',
+        })),
+        confidence: isLiveData ? 'high' : 'medium',
+        follow_up: 'Show me the Group A opening fixtures',
+        data_sources: [sourceLabel, 'MongoDB team registry'],
+        live_data: isLiveData,
+      }
+    }
+
+    const leader = [...teams].sort((a, b) => (b.wins ?? 0) - (a.wins ?? 0))[0]
     return {
       question_type: questionType,
       headline: `${leader.name ?? 'Leading Team'} Tops Retrieved Team Standings`,
@@ -172,6 +235,21 @@ export function generateResponseFromMongoData(
 
   if (key === 'matches' || records[0]?.homeTeam !== undefined) {
     const matches = records as MatchRecord[]
+
+    if (isPreTournamentMatches(matches)) {
+      const next = matches[0]
+      return {
+        question_type: questionType,
+        headline: `${matches.length} Upcoming Fixtures On File`,
+        answer:
+          `${PRE_TOURNAMENT_NOTE}\n\nMatchMind queried ${sourceLabel} and found ${matches.length} scheduled fixture(s) — no finished results yet. Next listed fixture: ${next?.homeTeam} vs ${next?.awayTeam}${next?.group ? ` (Group ${next.group}` : ''}${next?.matchday ? `, Matchday ${next.matchday})` : next?.group ? ')' : ''}.\n\nScores will appear in MongoDB only after real matches are played and synced.`,
+        key_stats: buildMatchStats(matches),
+        confidence: isLiveData ? 'high' : 'medium',
+        follow_up: 'Which teams are in Group I?',
+        data_sources: [sourceLabel, 'MongoDB match fixtures'],
+        live_data: isLiveData,
+      }
+    }
 
     return {
       question_type: questionType,

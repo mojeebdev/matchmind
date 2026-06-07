@@ -5,8 +5,10 @@ import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { PassingBallLoader } from './PassingBallLoader'
+import { PreviewDataBanner } from './PreviewDataBanner'
 import { ResponseCard } from './ResponseCard'
 import type { AgentResponse } from '@/lib/types'
+import { isPreviewMode } from '@/lib/tournament-phase'
 import { agentPath, appPath, authPath } from '@/lib/urls'
 
 const EXAMPLE_QUESTIONS = [
@@ -85,9 +87,11 @@ export function AgentInterface() {
   }
 
   const profile = session?.user?.profile
+  const showPreviewBanner = isPreviewMode()
 
   return (
     <div className="agent-interface" style={{ maxWidth: 'var(--content-max)', margin: '0 auto', width: '100%' }}>
+      {showPreviewBanner && <PreviewDataBanner />}
       <div className="agent-interface__header">
         <span className="tag" style={{ marginBottom: '16px' }}>
           Live Agent
@@ -114,8 +118,9 @@ export function AgentInterface() {
             lineHeight: 1.7,
           }}
         >
-          Type any World Cup 2026 question. The agent classifies your intent,
-          queries MongoDB, and returns analyst-grade insight.
+          Type any World Cup 2026 question. Before kickoff, answers use
+          illustrative preview mockup data (clearly labeled). After the tournament
+          starts, results update from live MongoDB sync.
         </p>
 
         {session?.user ? (

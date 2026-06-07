@@ -22,8 +22,10 @@ export interface AgentResponse {
   confidence: ConfidenceLevel
   follow_up: string
   data_sources: string[]
-  /** true = queried live MongoDB Atlas; false = demo/mock fallback */
+  /** true = queried live MongoDB Atlas with real tournament results */
   live_data?: boolean
+  /** true = illustrative preview mockup before World Cup kickoff */
+  preview_data?: boolean
 }
 
 export interface MongoQueryPlan {

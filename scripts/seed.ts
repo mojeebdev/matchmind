@@ -1,14 +1,8 @@
 import { loadEnvFiles } from '../lib/load-env'
 import { applyDnsFix } from '../lib/dns-fix'
 import { MongoClient } from 'mongodb'
-import {
-  WC2026_TEAMS,
-  WC2026_PLAYERS,
-  WC2026_MATCHES,
-  WC2026_H2H,
-  WC2026_TOURNAMENT,
-  GROUPS_2026,
-} from '../lib/worldcup2026-data'
+import { getSeedDataset, GROUPS_2026 } from '../lib/worldcup2026-data'
+
 
 applyDnsFix()
 loadEnvFiles()
@@ -87,6 +81,7 @@ async function connectMongo(): Promise<MongoClient> {
 }
 
 async function seed() {
+  const dataset = getSeedDataset()
   const client = await connectMongo()
   try {
 
@@ -102,16 +97,20 @@ async function seed() {
     ])
     console.log('Cleared existing collections')
 
-    const teamsResult = await db.collection('teams').insertMany(WC2026_TEAMS)
+    const teamsResult = await db.collection('teams').insertMany(dataset.teams)
     console.log(`Seeded ${teamsResult.insertedCount} teams (12 groups A–L)`)
 
-    const playersResult = await db.collection('players').insertMany(WC2026_PLAYERS)
+    const playersResult = await db.collection('players').insertMany(dataset.players)
     console.log(`Seeded ${playersResult.insertedCount} players`)
 
-    const matchesResult = await db.collection('matches').insertMany(WC2026_MATCHES)
-    console.log(`Seeded ${matchesResult.insertedCount} matches (72 group + knockouts)`)
+    const matchesResult = await db.collection('matches').insertMany(dataset.matches)
+    const matchNote =
+      dataset.tournament.dataMode === 'preview'
+        ? 'preview mockup results + knockouts'
+        : '72 group fixtures — scheduled, no results'
+    console.log(`Seeded ${matchesResult.insertedCount} matches (${matchNote})`)
 
-    const h2hResult = await db.collection('headToHead').insertMany(WC2026_H2H)
+    const h2hResult = await db.collection('headToHead').insertMany(dataset.h2h)
     console.log(`Seeded ${h2hResult.insertedCount} head-to-head records`)
 
     const groupsDocs = Object.entries(GROUPS_2026).map(([group, teams]) => ({
@@ -123,15 +122,22 @@ async function seed() {
     console.log(`Seeded ${groupsDocs.length} group definitions`)
 
     await db.collection('tournament').insertOne({
-      ...WC2026_TOURNAMENT,
+      ...dataset.tournament,
       seededAt: new Date(),
       collections: ['teams', 'players', 'matches', 'headToHead', 'groups'],
     })
-    console.log('Seeded tournament metadata')
+    console.log(`Seeded tournament metadata (${dataset.tournament.dataMode} mode)`)
 
-    console.log('\n✅ World Cup 2026 intelligence database ready!')
-    console.log('   48 teams · 12 groups · squads · fixtures · H2H')
-    console.log('   Ask the agent: "Who leads Group I?" or "Top scorers?"')
+    if (dataset.tournament.dataMode === 'preview') {
+      console.log('\n✅ World Cup 2026 PREVIEW MOCKUP database ready!')
+      console.log('   Illustrative stats — clearly labeled in the agent UI until kickoff')
+      console.log('   Re-seed or sync after 11 Jun 2026 for live results')
+      console.log('   Ask the agent: "Who are the top scorers in Group B?"')
+    } else {
+      console.log('\n✅ World Cup 2026 LIVE database ready!')
+      console.log('   48 teams · 12 groups · squads · scheduled fixtures · H2H')
+      console.log('   Run npm run sync after matches to update scores')
+    }
   } catch (error) {
     console.error(formatConnectionHelp(error))
     process.exit(1)

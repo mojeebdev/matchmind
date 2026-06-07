@@ -49,7 +49,7 @@ export const siteFaqs = [
   {
     question: 'Does MatchMind use live FIFA broadcast data?',
     answer:
-      'No. MatchMind uses a curated World Cup 2026 intelligence database in MongoDB Atlas, seeded and optionally updated through an admin agent. It is not a live FIFA broadcast feed.',
+      'No. MatchMind is not a live FIFA broadcast feed. Before World Cup kickoff (11 June 2026), it shows clearly labeled preview mockup data — illustrative sample scores in MongoDB for demo UX. After kickoff, real results are synced via npm run sync or the admin agent and marked as live MongoDB data.',
   },
   {
     question: 'Who built MatchMind?',

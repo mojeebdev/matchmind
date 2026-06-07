@@ -101,7 +101,21 @@ export default function ArchitecturePage() {
           <h3 style={h3}>3 — Analysis</h3>
           <p>ADK <code style={gold}>LlmAgent</code> or the local Gemini pipeline reasons over records and returns structured JSON.</p>
           <h3 style={h3}>4 — Rendering</h3>
-          <p>Analyst card with headline, analysis, key stats, confidence, <strong style={gold}>● Live MongoDB</strong> badge, and follow-up.</p>
+          <p>
+            Analyst card with headline, analysis, key stats, confidence, data badge (
+            <strong style={gold}>◇ Preview mockup</strong> before kickoff ·{' '}
+            <strong style={gold}>● Live MongoDB</strong> after sync ·{' '}
+            <strong style={gold}>○ Demo data</strong> without MongoDB), and follow-up.
+          </p>
+
+          <h2 style={h2}>Tournament Data Phases</h2>
+          <p>
+            Before <strong style={gold}>11 June 2026</strong>, MatchMind seeds and serves{' '}
+            <strong style={gold}>preview mockup</strong> data — illustrative sample scores for demo UX,
+            with an amber banner on <code style={gold}>/agent</code> and disclosure in every response.
+            After kickoff, <code style={gold}>npm run sync</code> or the admin agent updates MongoDB;
+            badges switch to live mode automatically (<code style={gold}>lib/tournament-phase.ts</code>).
+          </p>
 
           <h2 style={h2}>Admin Agent</h2>
           <p><code style={gold}>/agent/admin</code> — protected by <code style={gold}>ADMIN_SECRET</code>. Tools: <code style={gold}>update_match_result</code>, <code style={gold}>update_player_stats</code>, <code style={gold}>query_football_data</code>.</p>
@@ -112,7 +126,9 @@ export default function ArchitecturePage() {
             <li>Admin agent — natural-language writes</li>
             <li><code style={gold}>npm run sync</code> — local private pipeline (gitignored)</li>
           </ul>
-          <p>Curated World Cup 2026 intelligence — not a live FIFA broadcast feed.</p>
+          <p>
+            Preview mockup before kickoff; live synced results after. Not a FIFA broadcast feed.
+          </p>
 
           <h2 style={h2}>Security</h2>
           <ul style={{ paddingLeft: '24px', margin: '12px 0' }}>

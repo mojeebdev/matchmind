@@ -62,6 +62,8 @@ export async function recalculateGroupStandings(group: string) {
   }
 
   for (const match of matches) {
+    if (match.status && match.status !== 'finished') continue
+
     const home = match.homeTeam as string
     const away = match.awayTeam as string
     const homeScore = (match.score as { home: number }).home ?? 0
