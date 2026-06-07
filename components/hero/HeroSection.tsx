@@ -64,11 +64,11 @@ export function HeroSection() {
           Know Your Game. Own Every Moment.
         </p>
 
-        <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
-          <Link href={agentPath('/')} className="btn-primary">
+        <div className="hero-cta">
+          <Link href={agentPath('/')} className="btn-primary hero-cta__btn">
             Ask the Agent →
           </Link>
-          <a href="#features" className="btn-ghost">
+          <a href="#features" className="btn-ghost hero-cta__btn">
             How It Works
           </a>
         </div>

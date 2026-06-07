@@ -211,6 +211,43 @@ h1, h2, h3 {
 }
 .btn-ghost:hover { color: var(--ink-primary); border-color: var(--gold-border); }
 
+/* HERO CTA — keep both actions side by side on mobile */
+.hero-cta {
+  display: flex;
+  gap: 16px;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  width: 100%;
+  max-width: 520px;
+}
+
+.hero-cta__btn {
+  flex: 1 1 0;
+  justify-content: center;
+  text-align: center;
+  white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+  .hero-cta {
+    gap: 10px;
+    max-width: none;
+  }
+
+  .hero-cta__btn {
+    padding: 12px 10px;
+    font-size: 12px;
+    letter-spacing: 0.01em;
+  }
+}
+
+@media (max-width: 380px) {
+  .hero-cta__btn {
+    padding: 11px 8px;
+    font-size: 11px;
+  }
+}
+
 /* CARDS */
 .card {
   background: rgba(15, 16, 18, 0.68);
