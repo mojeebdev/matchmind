@@ -1,22 +1,40 @@
 'use client'
 
 import Link from 'next/link'
-import { signIn } from 'next-auth/react'
-
-import { useState } from 'react'
+import { signIn, useSession } from 'next-auth/react'
+import { useEffect, useState } from 'react'
 import { AuthField } from '@/components/auth/AuthField'
 import { AuthShell } from '@/components/auth/AuthShell'
 import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton'
 import { Navbar } from '@/components/ui/Navbar'
 import { Footer } from '@/components/ui/Footer'
-import { appPath, authPath, navigateTo } from '@/lib/urls'
+import { agentPath, appPath, authPath, navigateTo } from '@/lib/urls'
 
 export default function SignUpPage() {
+  const { status, data: session } = useSession()
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    if (status !== 'authenticated') return
+    const destination = session?.user?.profile?.onboardingComplete
+      ? agentPath('/')
+      : appPath('/onboarding')
+    navigateTo(destination)
+  }, [status, session?.user?.profile?.onboardingComplete])
+
+  if (status === 'loading' || status === 'authenticated') {
+    return (
+      <>
+        <Navbar />
+        <main style={{ minHeight: '60vh' }} />
+        <Footer />
+      </>
+    )
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()

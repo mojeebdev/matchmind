@@ -1,24 +1,36 @@
 'use client'
 
 import Link from 'next/link'
-import { signIn } from 'next-auth/react'
+import { signIn, useSession } from 'next-auth/react'
 import { useSearchParams } from 'next/navigation'
-import { Suspense, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { AuthField } from '@/components/auth/AuthField'
 import { AuthShell } from '@/components/auth/AuthShell'
 import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton'
 import { Navbar } from '@/components/ui/Navbar'
 import { Footer } from '@/components/ui/Footer'
-import { authPath, navigateTo, resolveCallbackUrl } from '@/lib/urls'
+import { agentPath, authPath, navigateTo, resolveCallbackUrl } from '@/lib/urls'
 
 function SignInForm() {
+  const { status } = useSession()
   const searchParams = useSearchParams()
   const callbackUrl = resolveCallbackUrl(searchParams.get('callbackUrl'))
+  const redirectUrl = searchParams.get('callbackUrl') ? callbackUrl : agentPath('/')
+
+  useEffect(() => {
+    if (status === 'authenticated') {
+      navigateTo(redirectUrl)
+    }
+  }, [status, redirectUrl])
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+
+  if (status === 'loading' || status === 'authenticated') {
+    return <main style={{ minHeight: '60vh' }} />
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()

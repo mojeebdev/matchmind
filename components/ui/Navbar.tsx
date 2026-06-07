@@ -16,10 +16,34 @@ const linkStyle = {
   letterSpacing: '0.04em',
 } as const
 
+function SignInButton() {
+  return (
+    <Link href={authPath('/signin')} className="btn-ghost" style={{ fontSize: '13px', padding: '10px 18px' }}>
+      Sign in
+    </Link>
+  )
+}
+
+function SignOutButton() {
+  return (
+    <button
+      type="button"
+      className="btn-ghost"
+      style={{ fontSize: '13px', padding: '10px 18px' }}
+      onClick={() => signOut({ callbackUrl: appPath('/'), redirect: true })}
+    >
+      Sign out
+    </button>
+  )
+}
+
 export function Navbar() {
   const pathname = usePathname()
-  const { data: session } = useSession()
+  const { data: session, status } = useSession()
   const [menuOpen, setMenuOpen] = useState(false)
+
+  const isAuthenticated = status === 'authenticated' && Boolean(session?.user)
+  const isLoading = status === 'loading'
 
   useEffect(() => {
     setMenuOpen(false)
@@ -34,7 +58,7 @@ export function Navbar() {
 
   const navLinks = [
     { href: appPath('/docs/architecture'), label: 'Architecture' },
-    ...(session?.user
+    ...(isAuthenticated
       ? [
           { href: appPath('/history'), label: 'History' },
           { href: appPath('/profile'), label: 'Profile' },
@@ -69,20 +93,7 @@ export function Navbar() {
             </Link>
           ))}
 
-          {session?.user ? (
-            <button
-              type="button"
-              className="btn-ghost"
-              style={{ fontSize: '13px', padding: '10px 18px' }}
-              onClick={() => signOut({ callbackUrl: appPath('/') })}
-            >
-              Sign out
-            </button>
-          ) : (
-            <Link href={authPath('/signin')} className="btn-ghost" style={{ fontSize: '13px', padding: '10px 18px' }}>
-              Sign in
-            </Link>
-          )}
+          {isLoading ? null : isAuthenticated ? <SignOutButton /> : <SignInButton />}
         </div>
 
         <button
@@ -106,15 +117,15 @@ export function Navbar() {
             </Link>
           ))}
 
-          {session?.user ? (
+          {isLoading ? null : isAuthenticated ? (
             <>
               <span className="site-nav__mobile-meta">
-                {session.user.profile?.displayName || session.user.name || session.user.email}
+                {session?.user?.profile?.displayName || session?.user?.name || session?.user?.email}
               </span>
               <button
                 type="button"
                 className="site-nav__mobile-link site-nav__mobile-button"
-                onClick={() => signOut({ callbackUrl: appPath('/') })}
+                onClick={() => signOut({ callbackUrl: appPath('/'), redirect: true })}
               >
                 Sign out
               </button>

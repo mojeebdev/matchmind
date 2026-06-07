@@ -45,6 +45,20 @@ export async function middleware(req: NextRequest) {
   const protectedPaths = ['/profile', '/history']
   const isProtected = protectedPaths.some((path) => pathname.startsWith(path))
 
+  const isSignInPath = pathname === '/signin' || pathname === '/auth/signin'
+  const isSignUpPath = pathname === '/signup' || pathname === '/auth/signup'
+
+  if (isLoggedIn && isSignInPath) {
+    return NextResponse.redirect(new URL(agentHostUrl(host, '/')))
+  }
+
+  if (isLoggedIn && isSignUpPath) {
+    const destination = onboardingComplete
+      ? agentHostUrl(host, '/')
+      : appHostUrl(host, '/onboarding')
+    return NextResponse.redirect(new URL(destination))
+  }
+
   if (isProtected && !isLoggedIn) {
     const signInUrl = new URL(authHostUrl(host, '/signin'))
     signInUrl.searchParams.set('callbackUrl', appHostUrl(host, pathname))

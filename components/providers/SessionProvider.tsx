@@ -1,8 +1,13 @@
 'use client'
 
 import { SessionProvider as NextAuthSessionProvider } from 'next-auth/react'
-import { urls } from '@/lib/urls'
+import { SessionSync } from '@/components/providers/SessionSync'
 
 export function SessionProvider({ children }: { children: React.ReactNode }) {
-  return <NextAuthSessionProvider baseUrl={urls.auth}>{children}</NextAuthSessionProvider>
+  return (
+    <NextAuthSessionProvider refetchOnWindowFocus>
+      <SessionSync />
+      {children}
+    </NextAuthSessionProvider>
+  )
 }
