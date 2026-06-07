@@ -10,7 +10,9 @@ import {
   rewriteForSubdomain,
 } from '@/lib/domains'
 
-const STATIC_FILE = /\.(?:svg|png|jpg|jpeg|gif|webp|ico|txt|json|webmanifest)$/
+const STATIC_FILE = /\.(?:svg|png|jpg|jpeg|gif|webp|ico|txt|json|webmanifest|xml)$/
+
+const SEO_PATHS = new Set(['/robots.txt', '/sitemap.xml', '/manifest.webmanifest'])
 
 const AUTH_PUBLIC_PATHS = new Set([
   '/signin',
@@ -24,7 +26,7 @@ export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl
   const subdomain = getSubdomainFromHost(host)
 
-  if (pathname.startsWith('/_next') || STATIC_FILE.test(pathname)) {
+  if (pathname.startsWith('/_next') || SEO_PATHS.has(pathname) || STATIC_FILE.test(pathname)) {
     return NextResponse.next()
   }
 

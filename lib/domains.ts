@@ -197,7 +197,9 @@ export function getCanonicalRedirect(req: NextRequest, subdomain: Subdomain) {
     pathname.startsWith('/onboarding') ||
     pathname.startsWith('/docs') ||
     pathname === '/privacy' ||
-    pathname === '/terms'
+    pathname === '/terms' ||
+    pathname === '/sitemap.xml' ||
+    pathname === '/robots.txt'
   ) {
     return NextResponse.redirect(appHostUrl(host, pathname))
   }
