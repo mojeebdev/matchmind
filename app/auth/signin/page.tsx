@@ -6,6 +6,7 @@ import { useSearchParams } from 'next/navigation'
 import { Suspense, useState } from 'react'
 import { AuthField } from '@/components/auth/AuthField'
 import { AuthShell } from '@/components/auth/AuthShell'
+import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton'
 import { Navbar } from '@/components/ui/Navbar'
 import { Footer } from '@/components/ui/Footer'
 import { authPath, navigateTo, resolveCallbackUrl } from '@/lib/urls'
@@ -84,18 +85,7 @@ function SignInForm() {
         </button>
       </form>
 
-      <div style={{ margin: '24px 0', textAlign: 'center', color: 'var(--ink-muted)', fontSize: '12px' }}>
-        or
-      </div>
-
-      <button
-        type="button"
-        className="btn-ghost"
-        style={{ width: '100%' }}
-        onClick={() => signIn('google', { callbackUrl })}
-      >
-        Continue with Google
-      </button>
+      <GoogleSignInButton callbackUrl={callbackUrl} />
     </AuthShell>
   )
 }

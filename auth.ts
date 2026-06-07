@@ -2,6 +2,7 @@ import NextAuth from 'next-auth'
 import Google from 'next-auth/providers/google'
 import Credentials from 'next-auth/providers/credentials'
 import { MongoDBAdapter } from '@auth/mongodb-adapter'
+import { isGoogleAuthEnabled, subdomainAuthCookies } from '@/lib/auth/cookies'
 import { clientPromise } from '@/lib/mongodb-client'
 import { findUserById, serializeProfile, verifyCredentials } from '@/lib/users'
 
@@ -26,23 +27,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   pages: {
     signIn: '/auth/signin',
   },
-  ...(sharedCookieDomain
-    ? {
-        cookies: {
-          sessionToken: { options: { domain: sharedCookieDomain } },
-          callbackUrl: { options: { domain: sharedCookieDomain } },
-          csrfToken: { options: { domain: sharedCookieDomain } },
-          pkceCodeVerifier: { options: { domain: sharedCookieDomain } },
-          state: { options: { domain: sharedCookieDomain } },
-        },
-      }
-    : {}),
+  ...(sharedCookieDomain ? { cookies: subdomainAuthCookies(sharedCookieDomain) } : {}),
   providers: [
-    ...(process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET
+    ...(isGoogleAuthEnabled()
       ? [
           Google({
-            clientId: process.env.AUTH_GOOGLE_ID,
-            clientSecret: process.env.AUTH_GOOGLE_SECRET,
+            clientId: process.env.AUTH_GOOGLE_ID!,
+            clientSecret: process.env.AUTH_GOOGLE_SECRET!,
             allowDangerousEmailAccountLinking: true,
           }),
         ]
