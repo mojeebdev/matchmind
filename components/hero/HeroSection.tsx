@@ -7,10 +7,10 @@ export function HeroSection() {
       className="bg-hero"
       style={{
         position: 'relative',
-        minHeight: '100vh',
+        minHeight: 'min(72vh, 720px)',
         display: 'flex',
         alignItems: 'center',
-        paddingTop: 'var(--nav-height)',
+        paddingTop: '48px',
       }}
     >
       {/* Dark overlay */}
@@ -38,7 +38,6 @@ export function HeroSection() {
         </span>
 
         <h1
-          aria-label="MatchMind"
           style={{
             fontFamily: 'var(--font-display)',
             fontSize: 'clamp(56px, 10vw, 96px)',
@@ -49,7 +48,7 @@ export function HeroSection() {
             marginBottom: '8px',
           }}
         >
-          Match<span style={{ color: 'var(--gold)' }}>Mind</span>
+          MatchMind
         </h1>
 
         <p
@@ -88,7 +87,7 @@ export function HeroSection() {
             color: 'var(--ink-secondary)',
             lineHeight: 1.7,
             maxWidth: 'var(--text-max)',
-            marginBottom: '40px',
+            marginBottom: '20px',
           }}
         >
           MatchMind is a free web app for World Cup 2026 fans. Ask any football question
@@ -96,6 +95,22 @@ export function HeroSection() {
           and MatchMind queries MongoDB Atlas with Gemini to return structured,
           analyst-grade answers.
         </p>
+
+        <ul
+          style={{
+            fontFamily: 'var(--font-body)',
+            fontSize: '14px',
+            color: 'var(--ink-secondary)',
+            lineHeight: 1.7,
+            paddingLeft: '20px',
+            marginBottom: '32px',
+            maxWidth: 'var(--text-max)',
+          }}
+        >
+          <li>Search player stats, group standings, and match results</li>
+          <li>Get AI match analysis and fantasy lineup suggestions</li>
+          <li>Sign in optionally to save history and personalize responses</li>
+        </ul>
 
         <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
           <Link href={agentPath('/')} className="btn-primary">

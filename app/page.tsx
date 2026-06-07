@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { ApplicationPurposeBanner } from '@/components/home/ApplicationPurposeBanner'
 import { HeroSection } from '@/components/hero/HeroSection'
 import { AppPurposeSection } from '@/components/home/AppPurposeSection'
 import { FeaturesSection } from '@/components/features/FeaturesSection'
@@ -12,7 +13,7 @@ import { homePageJsonLd } from '@/lib/structured-data'
 
 export const metadata: Metadata = {
   title: {
-    absolute: siteConfig.title,
+    absolute: 'MatchMind — AI Football Intelligence App for World Cup 2026',
   },
   description: siteConfig.description,
   alternates: {
@@ -26,6 +27,7 @@ export default function HomePage() {
       <JsonLd data={homePageJsonLd()} />
       <Navbar />
       <main>
+        <ApplicationPurposeBanner />
         <HeroSection />
         <AppPurposeSection />
         <FeaturesSection />
