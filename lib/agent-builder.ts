@@ -13,10 +13,30 @@ import { InMemoryRunner } from '@google/adk'
 import { matchMindAgent } from '@/agent/matchmind-agent'
 import { processAgentQuestion } from './agent'
 import { isGeminiConfigured } from './gemini'
+import { isMongoConfigured } from './mongodb'
 import { validateAgentResponse } from './validation'
 import type { AgentUserContext } from './user-context'
 import { formatUserContextBlock } from './user-context'
 import type { AgentResponse } from './types'
+
+type AdkEvent = {
+  content?: {
+    parts?: Array<{
+      text?: string
+      functionResponse?: {
+        name?: string
+        id?: string
+        response?: Record<string, unknown>
+      }
+    }>
+  }
+}
+
+type AdkRunResult = {
+  text: string
+  queriedMongo: boolean
+  mongoRecordCount: number
+}
 
 export function isAgentBuilderConfigured(): boolean {
   return Boolean(
@@ -27,25 +47,40 @@ export function isAgentBuilderConfigured(): boolean {
 }
 
 export function isAdkEnabled(): boolean {
-  return (
-    process.env.USE_ADK_AGENT === 'true' &&
-    isGeminiConfigured()
-  )
+  return process.env.USE_ADK_AGENT === 'true' && isGeminiConfigured()
 }
 
-function extractTextFromAdkEvents(
-  events: AsyncIterable<{ content?: { parts?: Array<{ text?: string }> } }>
-): Promise<string> {
-  return (async () => {
-    let lastText = ''
-    for await (const event of events) {
-      const parts = event.content?.parts ?? []
-      for (const part of parts) {
-        if (part.text) lastText = part.text
+async function collectAdkRunResult(
+  events: AsyncIterable<AdkEvent>
+): Promise<AdkRunResult> {
+  let lastText = ''
+  let queriedMongo = false
+  let mongoRecordCount = 0
+
+  for await (const event of events) {
+    const parts = event.content?.parts ?? []
+    for (const part of parts) {
+      if (part.text) lastText = part.text
+
+      const toolResponse = part.functionResponse?.response
+      if (!toolResponse || typeof toolResponse !== 'object') continue
+
+      const status = toolResponse.status
+      const hasCount = toolResponse.record_count !== undefined
+
+      if (status === 'success' || status === 'error' || hasCount) {
+        queriedMongo = true
+        const count = Number(toolResponse.record_count ?? 0)
+        if (!Number.isNaN(count)) {
+          mongoRecordCount += count
+        } else if (Array.isArray(toolResponse.records)) {
+          mongoRecordCount += toolResponse.records.length
+        }
       }
     }
-    return lastText
-  })()
+  }
+
+  return { text: lastText, queriedMongo, mongoRecordCount }
 }
 
 function extractJsonPayload(text: string): string {
@@ -59,10 +94,9 @@ function extractJsonPayload(text: string): string {
   return text.replace(/```json|```/g, '').trim()
 }
 
-function inferLiveData(sources: string[]): boolean {
-  const blob = sources.join(' ').toLowerCase()
-  if (blob.includes('demo')) return false
-  return blob.includes('mongodb') || blob.includes('atlas') || blob.includes('mcp')
+function resolveLiveData(meta: AdkRunResult): boolean {
+  if (!isMongoConfigured()) return false
+  return meta.queriedMongo
 }
 
 async function runAdkAgent(question: string, userContext?: AgentUserContext): Promise<AgentResponse> {
@@ -80,22 +114,36 @@ async function runAdkAgent(question: string, userContext?: AgentUserContext): Pr
     },
   })
 
-  const rawText = await extractTextFromAdkEvents(eventStream)
-  const clean = extractJsonPayload(rawText)
+  const meta = await collectAdkRunResult(eventStream)
+  const clean = extractJsonPayload(meta.text)
+  const liveData = resolveLiveData(meta)
 
   try {
     const parsed = JSON.parse(clean)
     const validated = validateAgentResponse(parsed, 'general')
     if (validated) {
-      return { ...validated, live_data: inferLiveData(validated.data_sources) }
+      if (isMongoConfigured() && !meta.queriedMongo) {
+        console.warn('[AgentBuilder] ADK skipped MongoDB tool — falling back to local pipeline')
+        return processAgentQuestion(question, userContext)
+      }
+
+      const dataSources = [...validated.data_sources]
+      if (liveData && !dataSources.some((s) => /mongodb|atlas|mcp/i.test(s))) {
+        dataSources.unshift('MongoDB Atlas')
+      }
+
+      return {
+        ...validated,
+        data_sources: dataSources,
+        live_data: liveData,
+      }
     }
   } catch {
     // fall through to local pipeline
   }
 
   console.warn('[AgentBuilder] ADK response was not valid JSON — falling back to local pipeline')
-  const fallback = await processAgentQuestion(question, userContext)
-  return fallback
+  return processAgentQuestion(question, userContext)
 }
 
 /**

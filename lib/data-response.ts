@@ -110,22 +110,23 @@ export function generateResponseFromMongoData(
       question_type: questionType,
       headline: 'No Matching Records Found in Database',
       answer:
-        `MatchMind queried the ${dataSource} football intelligence database for your question — "${question}" — but found no matching records. This may indicate the database needs seeding (run \`npm run seed\`) or the query criteria were too restrictive.\n\nTry rephrasing your question or asking about teams in Groups A–D, top scorers, or recent match results.`,
+        `MatchMind queried ${dataSource} for your question — "${question}" — but found no matching records. The database was queried live; nothing matched this specific filter.\n\nTry rephrasing your question or asking about teams in Groups A–D, top scorers, or recent match results.`,
       key_stats: [
         {
           label: 'Records Found',
           value: '0',
-          context: 'Database may need seeding',
+          context: 'Live MongoDB query returned no matches',
         },
         {
           label: 'Suggestion',
-          value: 'Run npm run seed',
-          context: 'Populates matches, players, teams, headToHead',
+          value: 'Rephrase question',
+          context: 'Try broader stats or group-based queries',
         },
       ],
       confidence: 'low',
       follow_up: 'Who are the top scorers in the tournament?',
-      data_sources: [dataSource, 'Demo fallback — no records matched'],
+      data_sources: [dataSource],
+      live_data: isLiveData,
     }
   }
 

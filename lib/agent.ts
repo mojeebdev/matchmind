@@ -106,30 +106,38 @@ async function fetchFootballData(
     }
   }
 
-  try {
-    const queryPlan = await generateMongoQuery(questionType, question)
-    const mcpResult = await mcpQueryFootballData(queryPlan)
+  const queryPlan = await generateMongoQuery(questionType, question)
+  const mcpResult = await mcpQueryFootballData(queryPlan)
 
-    if (mcpResult.records.length === 0) {
-      console.info(
-        `[MatchMind] Empty result from ${mcpResult.collection} — falling back to mock data`
-      )
-      return {
-        mongoData: getMockDataForType(questionType, question),
-        isLiveData: false,
-      }
-    }
+  if (mcpResult.records.length === 0) {
+    console.info(`[MatchMind] Empty result from ${mcpResult.collection} — no mock fallback`)
+  }
 
-    return {
-      mongoData: { [mcpResult.collection]: mcpResult.records },
-      isLiveData: true,
-    }
-  } catch (error) {
-    console.warn('[MatchMind] MongoDB/MCP query failed — using mock data:', error)
-    return {
-      mongoData: getMockDataForType(questionType, question),
-      isLiveData: false,
-    }
+  return {
+    mongoData: { [mcpResult.collection]: mcpResult.records },
+    isLiveData: true,
+  }
+}
+
+function buildDatabaseErrorResponse(
+  question: string,
+  questionType: QuestionType,
+  error: unknown
+): AgentResponse {
+  const detail = error instanceof Error ? error.message : 'Unknown database error'
+  return {
+    question_type: questionType,
+    headline: 'Database Query Failed',
+    answer:
+      `MatchMind could not query MongoDB Atlas for your question — "${question}". The live database is configured but the request failed.\n\nError: ${detail}\n\nPlease try again in a moment. If this persists, verify MONGODB_URI on the server and that the Atlas cluster is reachable.`,
+    key_stats: [
+      { label: 'Data source', value: 'MongoDB Atlas', context: 'Query did not complete' },
+      { label: 'Status', value: 'Error', context: detail.slice(0, 80) },
+    ],
+    confidence: 'low',
+    follow_up: 'Who are the top scorers in Group B?',
+    data_sources: ['MongoDB Atlas'],
+    live_data: false,
   }
 }
 
@@ -142,12 +150,24 @@ export async function analyzeFootballQuestion(
 ): Promise<AgentResponse> {
   if (!isGeminiConfigured()) {
     if (isMongoDataEmpty(mongoData)) {
+      if (isMongoConfigured()) {
+        return {
+          ...generateResponseFromMongoData(question, questionType, mongoData, {
+            isLiveData: true,
+            dataSource: 'MongoDB Atlas',
+          }),
+          live_data: true,
+        }
+      }
       return getMockResponse(questionType, question)
     }
-    return generateResponseFromMongoData(question, questionType, mongoData, {
-      isLiveData,
-      dataSource: isLiveData ? 'MongoDB Atlas' : 'Demo dataset',
-    })
+    return {
+      ...generateResponseFromMongoData(question, questionType, mongoData, {
+        isLiveData,
+        dataSource: isLiveData ? 'MongoDB Atlas' : 'Demo dataset',
+      }),
+      live_data: isLiveData,
+    }
   }
 
   try {
@@ -183,16 +203,36 @@ Analyze this data and answer the question as a senior football analyst. When fan
 
     console.warn('[MatchMind] Gemini response failed validation — using fallback')
     if (!isMongoDataEmpty(mongoData)) {
-      return generateResponseFromMongoData(question, questionType, mongoData, {
-        isLiveData,
-      })
+      return {
+        ...generateResponseFromMongoData(question, questionType, mongoData, { isLiveData }),
+        live_data: isLiveData,
+      }
+    }
+    if (isMongoConfigured()) {
+      return {
+        ...generateResponseFromMongoData(question, questionType, mongoData, {
+          isLiveData: true,
+          dataSource: 'MongoDB Atlas',
+        }),
+        live_data: true,
+      }
     }
     return getMockResponse(questionType, question)
   } catch {
     if (!isMongoDataEmpty(mongoData)) {
-      return generateResponseFromMongoData(question, questionType, mongoData, {
-        isLiveData,
-      })
+      return {
+        ...generateResponseFromMongoData(question, questionType, mongoData, { isLiveData }),
+        live_data: isLiveData,
+      }
+    }
+    if (isMongoConfigured()) {
+      return {
+        ...generateResponseFromMongoData(question, questionType, mongoData, {
+          isLiveData: true,
+          dataSource: 'MongoDB Atlas',
+        }),
+        live_data: true,
+      }
     }
     return getMockResponse(questionType, question)
   }
@@ -203,7 +243,19 @@ export async function processAgentQuestion(
   userContext?: AgentUserContext
 ): Promise<AgentResponse> {
   const questionType = await classifyQuestion(question)
-  const { mongoData, isLiveData } = await fetchFootballData(questionType, question)
+
+  let mongoData: Record<string, unknown>
+  let isLiveData: boolean
+
+  try {
+    const fetched = await fetchFootballData(questionType, question)
+    mongoData = fetched.mongoData
+    isLiveData = fetched.isLiveData
+  } catch (error) {
+    console.warn('[MatchMind] MongoDB/MCP query failed:', error)
+    return buildDatabaseErrorResponse(question, questionType, error)
+  }
+
   const response = await analyzeFootballQuestion(
     question,
     questionType,
@@ -212,7 +264,20 @@ export async function processAgentQuestion(
     userContext
   )
 
-  const final =
-    validateAgentResponse(response, questionType) ?? getMockResponse(questionType, question)
-  return { ...final, live_data: isLiveData }
+  const validated = validateAgentResponse(response, questionType)
+  if (validated) {
+    return { ...validated, live_data: isMongoConfigured() ? true : isLiveData }
+  }
+
+  if (isMongoConfigured()) {
+    return {
+      ...generateResponseFromMongoData(question, questionType, mongoData, {
+        isLiveData: true,
+        dataSource: 'MongoDB Atlas',
+      }),
+      live_data: true,
+    }
+  }
+
+  return { ...getMockResponse(questionType, question), live_data: false }
 }
