@@ -249,6 +249,202 @@ h1, h2, h3 {
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
+/* AGENT — passing ball loader */
+@keyframes agent-pass-loader-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes agent-ball-pass {
+  0% {
+    left: 18px;
+    transform: translateY(0) rotate(0deg) scale(1);
+  }
+  18% {
+    transform: translateY(-10px) rotate(120deg) scale(1.05);
+  }
+  50% {
+    left: calc(100% - 38px);
+    transform: translateY(0) rotate(360deg) scale(1);
+  }
+  68% {
+    transform: translateY(-10px) rotate(480deg) scale(1.05);
+  }
+  100% {
+    left: 18px;
+    transform: translateY(0) rotate(720deg) scale(1);
+  }
+}
+
+@keyframes agent-player-receive-left {
+  0%, 44%, 56%, 100% {
+    box-shadow: 0 0 0 0 rgba(201, 168, 76, 0);
+    border-color: var(--gold-border);
+  }
+  50% {
+    box-shadow: 0 0 18px rgba(201, 168, 76, 0.45);
+    border-color: var(--gold);
+  }
+}
+
+@keyframes agent-player-receive-right {
+  0%, 94%, 100% {
+    box-shadow: 0 0 0 0 rgba(201, 168, 76, 0);
+    border-color: var(--gold-border);
+  }
+  50% {
+    box-shadow: 0 0 18px rgba(201, 168, 76, 0.45);
+    border-color: var(--gold);
+  }
+}
+
+@keyframes agent-phase-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.agent-pass-loader {
+  margin-top: 32px;
+  padding: clamp(28px, 4vw, 36px);
+  text-align: center;
+  animation: agent-pass-loader-in 0.45s var(--ease-out) forwards;
+}
+
+.agent-pass-loader__eyebrow {
+  font-family: var(--font-body);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  margin-bottom: 24px;
+}
+
+.agent-pass-track {
+  position: relative;
+  width: min(300px, 82%);
+  height: 56px;
+  margin: 0 auto 20px;
+}
+
+.agent-pass-arc {
+  position: absolute;
+  left: 28px;
+  right: 28px;
+  top: 50%;
+  height: 1px;
+  transform: translateY(-50%);
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(201, 168, 76, 0.22) 18%,
+    rgba(201, 168, 76, 0.35) 50%,
+    rgba(201, 168, 76, 0.22) 82%,
+    transparent 100%
+  );
+}
+
+.agent-pass-arc::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -14px;
+  height: 28px;
+  border-top: 1px dashed rgba(201, 168, 76, 0.18);
+  border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+  pointer-events: none;
+}
+
+.agent-pass-player {
+  position: absolute;
+  top: 50%;
+  width: 32px;
+  height: 32px;
+  transform: translateY(-50%);
+  border-radius: 50%;
+  border: 1.5px solid var(--gold-border);
+  background: rgba(8, 9, 10, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.agent-pass-player--left {
+  left: 0;
+  animation: agent-player-receive-left 2.2s var(--ease-out) infinite;
+}
+
+.agent-pass-player--right {
+  right: 0;
+  animation: agent-player-receive-right 2.2s var(--ease-out) infinite;
+}
+
+.agent-pass-player__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--gold);
+  box-shadow: 0 0 10px rgba(201, 168, 76, 0.5);
+}
+
+.agent-pass-ball {
+  position: absolute;
+  top: 50%;
+  left: 18px;
+  width: 22px;
+  height: 22px;
+  margin-top: -11px;
+  animation: agent-ball-pass 2.2s var(--ease-out) infinite;
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.35));
+}
+
+.agent-pass-ball__icon {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.agent-pass-loader__phase {
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--gold-light);
+  animation: agent-phase-in 0.35s var(--ease-out) forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .agent-pass-loader {
+    animation: none;
+  }
+
+  .agent-pass-ball {
+    animation: none;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  .agent-pass-player--left,
+  .agent-pass-player--right {
+    animation: none;
+  }
+
+  .agent-pass-loader__phase {
+    animation: none;
+  }
+}
+
 /* HOW IT WORKS — step numbers + card entrance */
 @keyframes feature-card-in {
   from {

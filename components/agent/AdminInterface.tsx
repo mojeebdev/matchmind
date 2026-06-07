@@ -2,10 +2,17 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { PassingBallLoader } from './PassingBallLoader'
 import { ResponseCard } from './ResponseCard'
 import type { AgentResponse } from '@/lib/types'
 
 const ADMIN_KEY_STORAGE = 'matchmind_admin_key'
+
+const ADMIN_LOADER_PHASES = [
+  'Parsing your instruction…',
+  'Writing to MongoDB Atlas…',
+  'Confirming database update…',
+] as const
 
 const EXAMPLE_INSTRUCTIONS = [
   'Mexico beat South Korea 2-1 in Group A. Update the score and standings.',
@@ -201,14 +208,7 @@ export function AdminInterface() {
               whiteSpace: 'nowrap',
             }}
           >
-            {loading ? (
-              <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span className="spinner" />
-                Updating...
-              </span>
-            ) : (
-              'Update DB →'
-            )}
+            {loading ? 'Updating…' : 'Update DB →'}
           </button>
         </div>
       </form>
@@ -254,6 +254,13 @@ export function AdminInterface() {
           ))}
         </div>
       </div>
+
+      {loading && (
+        <PassingBallLoader
+          label="Admin agent in play"
+          phases={ADMIN_LOADER_PHASES}
+        />
+      )}
 
       {error && (
         <div

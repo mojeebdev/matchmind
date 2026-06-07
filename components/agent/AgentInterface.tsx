@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { PassingBallLoader } from './PassingBallLoader'
 import { ResponseCard } from './ResponseCard'
 import type { AgentResponse } from '@/lib/types'
 
@@ -137,14 +138,7 @@ export function AgentInterface() {
               whiteSpace: 'nowrap',
             }}
           >
-            {loading ? (
-              <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span className="spinner" />
-                Analyzing...
-              </span>
-            ) : (
-              'Analyze →'
-            )}
+            {loading ? 'Analyzing…' : 'Analyze →'}
           </button>
         </div>
       </form>
@@ -197,6 +191,8 @@ export function AgentInterface() {
           ))}
         </div>
       </div>
+
+      {loading && <PassingBallLoader />}
 
       {error && (
         <div
