@@ -24,16 +24,7 @@ export default function AgentPage() {
   return (
     <>
       <Navbar />
-      <main
-        className="bg-middle section-surface"
-        style={{
-          minHeight: '100vh',
-          paddingTop: 'calc(var(--nav-height) + 48px)',
-          paddingBottom: 'var(--section-pad)',
-          paddingLeft: 'clamp(24px, 6vw, 80px)',
-          paddingRight: 'clamp(24px, 6vw, 80px)',
-        }}
-      >
+      <main className="bg-middle section-surface page-shell">
         <div className="section-scrim section-scrim-agent" aria-hidden="true" />
         <div style={{ position: 'relative', zIndex: 1 }}>
           <Suspense fallback={<p style={{ color: 'var(--ink-secondary)' }}>Loading agent…</p>}>

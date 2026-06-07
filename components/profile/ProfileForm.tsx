@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react'
 import { AuthField } from '@/components/auth/AuthField'
 import { WORLD_CUP_TEAMS } from '@/lib/countries'
 import { agentPath, navigateTo } from '@/lib/urls'
+import { normalizeUsername } from '@/lib/username'
 
 type ProfileFormProps = {
   onboarding?: boolean
@@ -38,9 +39,17 @@ export function ProfileForm({ onboarding = false, onComplete }: ProfileFormProps
     setAlertSupportedCountry(profile.alertSupportedCountry ?? true)
   }, [session])
 
+  const savedUsername = session?.user?.profile?.username ?? ''
+
   useEffect(() => {
     if (!username.trim() || username.length < 3) {
       setUsernameStatus(null)
+      return
+    }
+
+    const normalized = normalizeUsername(username)
+    if (savedUsername && normalizeUsername(savedUsername) === normalized) {
+      setUsernameStatus('Your current username')
       return
     }
 
@@ -55,11 +64,12 @@ export function ProfileForm({ onboarding = false, onComplete }: ProfileFormProps
     }, 350)
 
     return () => clearTimeout(timer)
-  }, [username])
+  }, [username, savedUsername])
 
   const usernameTaken =
     usernameStatus !== null &&
     !usernameStatus.includes('available') &&
+    !usernameStatus.includes('Your current username') &&
     username.trim().length >= 3
 
   async function handleSubmit(e: React.FormEvent) {
@@ -138,7 +148,11 @@ export function ProfileForm({ onboarding = false, onComplete }: ProfileFormProps
             marginTop: '-8px',
             marginBottom: '16px',
             fontSize: '13px',
-            color: usernameStatus.includes('available') ? 'var(--gold)' : '#f87171',
+            color: usernameStatus.includes('available')
+              ? 'var(--gold)'
+              : usernameStatus.includes('Your current username')
+                ? 'var(--ink-secondary)'
+                : '#f87171',
           }}
         >
           {usernameStatus}

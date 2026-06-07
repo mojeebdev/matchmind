@@ -87,8 +87,8 @@ export function AgentInterface() {
   const profile = session?.user?.profile
 
   return (
-    <div style={{ maxWidth: 'var(--content-max)', margin: '0 auto', width: '100%' }}>
-      <div style={{ textAlign: 'center', marginBottom: '48px' }}>
+    <div className="agent-interface" style={{ maxWidth: 'var(--content-max)', margin: '0 auto', width: '100%' }}>
+      <div className="agent-interface__header">
         <span className="tag" style={{ marginBottom: '16px' }}>
           Live Agent
         </span>
@@ -119,14 +119,7 @@ export function AgentInterface() {
         </p>
 
         {session?.user ? (
-          <p
-            style={{
-              fontFamily: 'var(--font-body)',
-              fontSize: '13px',
-              color: 'var(--gold)',
-              marginTop: '12px',
-            }}
-          >
+          <p className="agent-interface__personalized">
             Personalized for{' '}
             {profile?.username
               ? `@${profile.username}`
@@ -177,23 +170,14 @@ export function AgentInterface() {
           >
             Your recent questions
           </span>
-          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          <div className="agent-chip-list">
             {recent.map((item) => (
               <button
                 key={item.id}
                 type="button"
                 onClick={() => handleExampleClick(item.question)}
                 disabled={loading}
-                style={{
-                  fontFamily: 'var(--font-body)',
-                  fontSize: '12px',
-                  color: 'var(--ink-secondary)',
-                  background: 'var(--void-03)',
-                  border: '1px solid var(--void-border)',
-                  borderRadius: '999px',
-                  padding: '8px 16px',
-                  cursor: loading ? 'not-allowed' : 'pointer',
-                }}
+                className="agent-chip"
               >
                 {item.question}
               </button>
@@ -203,43 +187,26 @@ export function AgentInterface() {
       )}
 
       <form onSubmit={handleSubmit}>
-        <div
-          className="card"
-          style={{
-            padding: '8px',
-            display: 'flex',
-            gap: '8px',
-            alignItems: 'stretch',
-          }}
-        >
+        <div className="card agent-search">
           <input
             type="text"
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
             placeholder="e.g. Who are the top scorers in Group B?"
             disabled={loading}
-            style={{
-              flex: 1,
-              background: 'transparent',
-              border: 'none',
-              outline: 'none',
-              fontFamily: 'var(--font-body)',
-              fontSize: '15px',
-              color: 'var(--ink-primary)',
-              padding: '16px 20px',
-            }}
+            className="agent-search__input"
           />
           <button
             type="submit"
-            className="btn-primary"
+            className="btn-primary agent-search__submit"
             disabled={loading || !question.trim()}
-            style={{
-              opacity: loading || !question.trim() ? 0.6 : 1,
-              cursor: loading || !question.trim() ? 'not-allowed' : 'pointer',
-              whiteSpace: 'nowrap',
-            }}
           >
-            {loading ? 'Analyzing…' : 'Analyze →'}
+            <span className="agent-search__submit-label agent-search__submit-label--full">
+              {loading ? 'Analyzing…' : 'Analyze →'}
+            </span>
+            <span className="agent-search__submit-label agent-search__submit-label--short">
+              {loading ? '…' : 'Analyze'}
+            </span>
           </button>
         </div>
       </form>
@@ -258,34 +225,14 @@ export function AgentInterface() {
         >
           Try an example
         </span>
-        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+        <div className="agent-chip-list">
           {EXAMPLE_QUESTIONS.map((example) => (
             <button
               key={example}
               type="button"
               onClick={() => handleExampleClick(example)}
               disabled={loading}
-              style={{
-                fontFamily: 'var(--font-body)',
-                fontSize: '12px',
-                color: 'var(--ink-secondary)',
-                background: 'var(--void-03)',
-                border: '1px solid var(--void-border)',
-                borderRadius: '999px',
-                padding: '8px 16px',
-                cursor: loading ? 'not-allowed' : 'pointer',
-                transition: 'border-color 0.2s, color 0.2s',
-              }}
-              onMouseOver={(e) => {
-                if (!loading) {
-                  e.currentTarget.style.borderColor = 'var(--gold-border)'
-                  e.currentTarget.style.color = 'var(--gold)'
-                }
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.borderColor = 'var(--void-border)'
-                e.currentTarget.style.color = 'var(--ink-secondary)'
-              }}
+              className="agent-chip"
             >
               {example}
             </button>

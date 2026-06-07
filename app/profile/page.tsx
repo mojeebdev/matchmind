@@ -1,6 +1,5 @@
 import type { Metadata } from 'next'
-import { auth } from '@/auth'
-import { ProfileForm } from '@/components/profile/ProfileForm'
+import { ProfilePageClient } from '@/components/profile/ProfilePageClient'
 import { Footer } from '@/components/ui/Footer'
 import { Navbar } from '@/components/ui/Navbar'
 
@@ -9,22 +8,11 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 }
 
-export default async function ProfilePage() {
-  const session = await auth()
-
+export default function ProfilePage() {
   return (
     <>
       <Navbar />
-      <main
-        className="bg-middle section-surface"
-        style={{
-          minHeight: '100vh',
-          paddingTop: 'calc(var(--nav-height) + 48px)',
-          paddingBottom: 'var(--section-pad)',
-          paddingLeft: 'clamp(24px, 6vw, 80px)',
-          paddingRight: 'clamp(24px, 6vw, 80px)',
-        }}
-      >
+      <main className="bg-middle section-surface page-shell">
         <div className="section-scrim section-scrim-agent" aria-hidden="true" />
         <div style={{ position: 'relative', zIndex: 1, maxWidth: '560px', margin: '0 auto' }}>
           <span className="tag" style={{ marginBottom: '16px' }}>
@@ -49,10 +37,10 @@ export default async function ProfilePage() {
               marginBottom: '28px',
             }}
           >
-            Signed in as {session?.user?.email}. These preferences shape your agent memory and tone.
+            Your fan preferences shape agent memory, tone, and email alerts.
           </p>
-          <div className="card" style={{ padding: '28px' }}>
-            <ProfileForm />
+          <div className="card" style={{ padding: 'clamp(20px, 4vw, 28px)' }}>
+            <ProfilePageClient />
           </div>
         </div>
       </main>
