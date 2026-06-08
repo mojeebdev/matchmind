@@ -53,7 +53,7 @@ The structured response is rendered as an analyst card with:
 | `preview` | `now < 2026-06-11` (or `FORCE_TOURNAMENT_PREVIEW=true`) | Groups, fixtures, venues, kickoff times (FIFA Dec 2025 draw) | Scores, standings, player stats, sample knockouts | Amber banner + ◇ Preview mockup badge |
 | `live` | On/after kickoff (or `FORCE_TOURNAMENT_LIVE=true`) | Official fixtures + synced results | — | ● Live MongoDB badge |
 
-Official fixture data lives in `lib/worldcup2026-official-fixtures.ts`. See **docs/DATA-SOURCES.md** for the complete real vs mockup matrix.
+Official fixture data lives in `lib/worldcup2026-official-fixtures.ts`. See [docs/DATA-SOURCES.md](DATA-SOURCES.md) for the complete real vs mockup matrix.
 
 `lib/response-data-mode.ts` applies `preview_data: true`, prepends disclosure text, and sets `live_data: false` during preview mode so the agent never claims mock stats are live FIFA data.
 

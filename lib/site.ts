@@ -36,6 +36,7 @@ export const siteConfig = {
   publicRoutes: [
     { path: '/', changeFrequency: 'weekly' as const, priority: 1 },
     { path: '/agent', changeFrequency: 'weekly' as const, priority: 0.9 },
+    { path: '/docs', changeFrequency: 'monthly' as const, priority: 0.65 },
     { path: '/docs/architecture', changeFrequency: 'monthly' as const, priority: 0.6 },
     { path: '/privacy', changeFrequency: 'yearly' as const, priority: 0.3 },
     { path: '/terms', changeFrequency: 'yearly' as const, priority: 0.3 },
@@ -45,6 +46,12 @@ export const siteConfig = {
 
 export function absoluteUrl(path = ''): string {
   return appPath(path || '/')
+}
+
+/** Link to a file on GitHub (main branch). */
+export function githubBlobUrl(repoPath: string): string {
+  const normalized = repoPath.replace(/^\//, '')
+  return `${siteConfig.github}/blob/main/${normalized}`
 }
 
 export function absoluteAgentUrl(path = '/') {

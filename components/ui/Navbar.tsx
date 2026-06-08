@@ -57,7 +57,7 @@ export function Navbar() {
   }, [menuOpen])
 
   const navLinks = [
-    { href: appPath('/docs/architecture'), label: 'Architecture' },
+    { href: appPath('/docs'), label: 'Docs' },
     ...(user
       ? [
           { href: appPath('/history'), label: 'History' },

@@ -24,6 +24,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.7,
     },
     {
+      url: absoluteUrl('/docs'),
+      lastModified,
+      changeFrequency: 'monthly',
+      priority: 0.65,
+    },
+    {
       url: absoluteUrl('/docs/architecture'),
       lastModified,
       changeFrequency: 'monthly',

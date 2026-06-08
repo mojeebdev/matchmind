@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Navbar } from '@/components/ui/Navbar'
 import { Footer } from '@/components/ui/Footer'
 import Link from 'next/link'
+import { DocFileLink } from '@/components/ui/DocFileLink'
 import { absoluteUrl } from '@/lib/site'
 import { appPath } from '@/lib/urls'
 
@@ -50,19 +51,30 @@ export default function ArchitecturePage() {
           margin: '0 auto',
         }}
       >
-        <Link
-          href={appPath('/')}
-          style={{
-            fontFamily: 'var(--font-body)',
-            fontSize: '13px',
-            color: 'var(--ink-secondary)',
-            textDecoration: 'none',
-            marginBottom: '32px',
-            display: 'inline-block',
-          }}
-        >
-          ← Back to Home
-        </Link>
+        <div style={{ marginBottom: '32px', display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+          <Link
+            href={appPath('/docs')}
+            style={{
+              fontFamily: 'var(--font-body)',
+              fontSize: '13px',
+              color: 'var(--ink-secondary)',
+              textDecoration: 'none',
+            }}
+          >
+            ← Documentation
+          </Link>
+          <Link
+            href={appPath('/')}
+            style={{
+              fontFamily: 'var(--font-body)',
+              fontSize: '13px',
+              color: 'var(--ink-muted)',
+              textDecoration: 'none',
+            }}
+          >
+            Home
+          </Link>
+        </div>
 
         <article
           style={{
@@ -117,7 +129,7 @@ export default function ArchitecturePage() {
             Before <strong style={gold}>11 June 2026</strong>, MatchMind also serves{' '}
             <strong style={gold}>preview mockup</strong> scores, standings, and player stats — illustrative demo
             data with an amber banner on <code style={gold}>/agent</code>. See{' '}
-            <code style={gold}>docs/DATA-SOURCES.md</code> for the full real vs mockup matrix.
+            <DocFileLink path="docs/DATA-SOURCES.md">docs/DATA-SOURCES.md</DocFileLink> for the full real vs mockup matrix.
             After kickoff, <code style={gold}>npm run sync</code> or the admin agent updates MongoDB;
             badges switch to live mode automatically (<code style={gold}>lib/tournament-phase.ts</code>).
           </p>
@@ -168,7 +180,8 @@ export default function ArchitecturePage() {
           <p style={{ marginTop: '16px', color: 'var(--gold)' }}>That's what makes MatchMind a real agent, not a chatbot wrapper.</p>
 
           <p style={{ marginTop: '32px', fontSize: '13px' }}>
-            Full markdown: <code style={gold}>docs/ARCHITECTURE.md</code> in the repository.
+            Full markdown on GitHub:{' '}
+            <DocFileLink path="docs/ARCHITECTURE.md">docs/ARCHITECTURE.md</DocFileLink>
           </p>
         </article>
       </main>

@@ -1,5 +1,6 @@
 'use client'
 
+import { githubBlobUrl } from '@/lib/site'
 import { aboutPath, appPath } from '@/lib/urls'
 
 export function Footer() {
@@ -79,7 +80,9 @@ export function Footer() {
             {[
               { label: 'GitHub', href: 'https://github.com/mojeebdev/matchmind', external: true },
               { label: 'About', href: aboutPath('/'), external: false },
+              { label: 'Docs', href: appPath('/docs'), external: false },
               { label: 'Architecture', href: appPath('/docs/architecture'), external: false },
+              { label: 'Data sources', href: githubBlobUrl('docs/DATA-SOURCES.md'), external: true },
               { label: 'Privacy', href: appPath('/privacy'), external: false },
               { label: 'Terms', href: appPath('/terms'), external: false },
               { label: 'README', href: 'https://github.com/mojeebdev/matchmind#readme', external: true },
