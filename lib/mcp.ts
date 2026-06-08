@@ -19,13 +19,21 @@ export const MCP_TOOL_DEFINITIONS = {
   query_football_data: {
     name: 'query_football_data',
     description:
-      'Execute a MongoDB aggregation pipeline against World Cup 2026 football intelligence collections (matches, players, teams, headToHead).',
+      'Execute a MongoDB aggregation pipeline against World Cup football intelligence collections (matches, players, teams, headToHead, playerWorldCupCareers, worldCupEditions, worldCupRecords).',
     inputSchema: {
       type: 'object',
       properties: {
         collection: {
           type: 'string',
-          enum: ['matches', 'players', 'teams', 'headToHead'],
+          enum: [
+            'matches',
+            'players',
+            'teams',
+            'headToHead',
+            'playerWorldCupCareers',
+            'worldCupEditions',
+            'worldCupRecords',
+          ],
         },
         pipeline: {
           type: 'array',

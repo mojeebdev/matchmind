@@ -7,6 +7,9 @@ export const ALLOWED_COLLECTIONS = [
   'headToHead',
   'groups',
   'tournament',
+  'playerWorldCupCareers',
+  'worldCupEditions',
+  'worldCupRecords',
 ] as const
 
 export type AllowedCollection = (typeof ALLOWED_COLLECTIONS)[number]

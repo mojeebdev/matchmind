@@ -32,7 +32,7 @@ function classifyLocally(question: string): QuestionType {
   if (/predict|win|chance|probability|outcome|forecast/.test(q)) return 'prediction'
   if (/fantasy|xi|lineup|pick|squad|team selection/.test(q)) return 'fantasy'
   if (/formation|tactic|press|strategy|defensive|weakness|system/.test(q)) return 'tactical'
-  if (/history|head.to.head|h2h|past|record|previous|ever met/.test(q)) return 'historical'
+  if (/history|head.to.head|h2h|past|record|previous|ever met|career|world cup goals|all.time|golden boot/.test(q)) return 'historical'
   if (/stat|goal|assist|scorer|xg|top|leader|best|most/.test(q)) return 'stats'
   return 'general'
 }
@@ -73,9 +73,14 @@ Given a question type and user question, generate the optimal MongoDB aggregatio
 
 Database collections:
 - matches: { homeTeam, awayTeam, score, date, stage, group, stats }
-- players: { name, team, goals, assists, xG, minutes, position }
+- players: { name, team, goals, assists, xG, minutes, position } — 2026 tournament stats only
 - teams: { name, group, form, possession, shotsOnTarget, cleanSheets }
 - headToHead: { team1, team2, matches[], wins, draws, losses }
+- playerWorldCupCareers: { name, totalGoals, totalAppearances, appearances[], careerSummary } — factual 1930–2022 career data
+- worldCupEditions: { year, host, winner, runnerUp, goldenBoot, highlight } — every World Cup edition
+- worldCupRecords: { category, rank, holder, value, context } — all-time records and leaderboards
+
+For career/historical player questions (e.g. "Ronaldo World Cup goals"), query playerWorldCupCareers — not players.
 
 Return ONLY a valid JSON object with:
 {

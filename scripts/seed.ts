@@ -2,6 +2,7 @@ import { loadEnvFiles } from '../lib/load-env'
 import { applyDnsFix } from '../lib/dns-fix'
 import { MongoClient } from 'mongodb'
 import { getSeedDataset, GROUPS_2026 } from '../lib/worldcup2026-data'
+import { getHistoricalSeedData } from '../lib/worldcup-historical-data'
 
 
 applyDnsFix()
@@ -82,6 +83,7 @@ async function connectMongo(): Promise<MongoClient> {
 
 async function seed() {
   const dataset = getSeedDataset()
+  const historical = getHistoricalSeedData()
   const client = await connectMongo()
   try {
 
@@ -94,6 +96,9 @@ async function seed() {
       db.collection('headToHead').deleteMany({}),
       db.collection('groups').deleteMany({}),
       db.collection('tournament').deleteMany({}),
+      db.collection('playerWorldCupCareers').deleteMany({}),
+      db.collection('worldCupEditions').deleteMany({}),
+      db.collection('worldCupRecords').deleteMany({}),
     ])
     console.log('Cleared existing collections')
 
@@ -121,10 +126,37 @@ async function seed() {
     await db.collection('groups').insertMany(groupsDocs)
     console.log(`Seeded ${groupsDocs.length} group definitions`)
 
+    const careersResult = await db
+      .collection('playerWorldCupCareers')
+      .insertMany(historical.playerWorldCupCareers)
+    console.log(
+      `Seeded ${careersResult.insertedCount} player World Cup career records (1930–2022)`
+    )
+
+    const editionsResult = await db
+      .collection('worldCupEditions')
+      .insertMany(historical.worldCupEditions)
+    console.log(`Seeded ${editionsResult.insertedCount} World Cup edition summaries`)
+
+    const recordsResult = await db
+      .collection('worldCupRecords')
+      .insertMany(historical.worldCupRecords)
+    console.log(`Seeded ${recordsResult.insertedCount} all-time World Cup records`)
+
     await db.collection('tournament').insertOne({
       ...dataset.tournament,
       seededAt: new Date(),
-      collections: ['teams', 'players', 'matches', 'headToHead', 'groups'],
+      collections: [
+        'teams',
+        'players',
+        'matches',
+        'headToHead',
+        'groups',
+        'playerWorldCupCareers',
+        'worldCupEditions',
+        'worldCupRecords',
+      ],
+      historical: historical.meta,
     })
     console.log(`Seeded tournament metadata (${dataset.tournament.dataMode} mode)`)
 

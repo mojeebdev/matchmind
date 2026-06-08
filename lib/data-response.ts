@@ -263,6 +263,93 @@ export function generateResponseFromMongoData(
     }
   }
 
+  if (key === 'playerWorldCupCareers' || records[0]?.totalGoals !== undefined && records[0]?.careerSummary !== undefined) {
+    const careers = records as Array<{
+      name?: string
+      nationality?: string
+      totalGoals?: number
+      totalAppearances?: number
+      tournamentsPlayed?: number
+      worldCupTitles?: number
+      careerSummary?: string
+      appearances?: Array<{ year: number; goals: number; stageReached: string }>
+    }>
+    const player = careers[0]
+    const breakdown = (player.appearances ?? [])
+      .map((a) => `${a.year}: ${a.goals} goals (${a.stageReached})`)
+      .join(' · ')
+
+    return {
+      question_type: questionType,
+      headline: `${player.name ?? 'Player'}: ${player.totalGoals ?? 0} World Cup Goals Across ${player.tournamentsPlayed ?? 0} Tournaments`,
+      answer:
+        `MatchMind pulled verified career data from the playerWorldCupCareers collection in ${sourceLabel}.\n\n${player.careerSummary ?? ''}\n\nCareer totals: ${player.totalGoals ?? 0} goals in ${player.totalAppearances ?? 0} appearances for ${player.nationality ?? 'their nation'}. World Cup titles: ${player.worldCupTitles ?? 0}.\n\nTournament breakdown: ${breakdown || 'No appearances on record.'}\n\nThis is factual historical data (1930–2022) — separate from 2026 preview mockup stats in the players collection.`,
+      key_stats: careers.slice(0, 4).map((c) => ({
+        label: c.name ?? 'Player',
+        value: `${c.totalGoals ?? 0} WC goals`,
+        context: `${c.tournamentsPlayed ?? 0} tournaments · ${c.totalAppearances ?? 0} apps`,
+      })),
+      confidence: 'high',
+      follow_up: `How does ${player.name ?? 'this player'} compare to the all-time World Cup scoring records?`,
+      data_sources: [sourceLabel, 'playerWorldCupCareers collection', 'FIFA historical archives'],
+      live_data: true,
+    }
+  }
+
+  if (key === 'worldCupEditions' || records[0]?.winner !== undefined && records[0]?.year !== undefined) {
+    const editions = records as Array<{
+      year?: number
+      host?: string
+      winner?: string
+      runnerUp?: string
+      scoreline?: string
+      goldenBoot?: { player: string; goals: number }
+      highlight?: string
+    }>
+    const edition = editions[0]
+    return {
+      question_type: questionType,
+      headline: `${edition.year ?? ''} World Cup: ${edition.winner ?? '?'} Beat ${edition.runnerUp ?? '?'}`,
+      answer:
+        `Historical edition data from ${sourceLabel}: ${edition.year} in ${edition.host}. Final: ${edition.winner} ${edition.scoreline ?? ''} ${edition.runnerUp}. Golden Boot: ${edition.goldenBoot?.player ?? '—'} (${edition.goldenBoot?.goals ?? 0} goals).\n\n${edition.highlight ?? ''}`,
+      key_stats: editions.slice(0, 4).map((e) => ({
+        label: `${e.year ?? ''} ${e.host ?? ''}`,
+        value: e.winner ?? '—',
+        context: e.highlight?.slice(0, 60) ?? '',
+      })),
+      confidence: 'high',
+      follow_up: 'Who holds the all-time World Cup scoring record?',
+      data_sources: [sourceLabel, 'worldCupEditions collection'],
+      live_data: true,
+    }
+  }
+
+  if (key === 'worldCupRecords' || records[0]?.category !== undefined && records[0]?.holder !== undefined) {
+    const recs = records as Array<{
+      category?: string
+      rank?: number
+      holder?: string
+      value?: string
+      context?: string
+    }>
+    const top = recs[0]
+    return {
+      question_type: questionType,
+      headline: `World Cup Record: ${top.category ?? 'All-time'}`,
+      answer:
+        `All-time records from ${sourceLabel}: #${top.rank ?? 1} — ${top.holder} (${top.value ?? ''}). ${top.context ?? ''}\n\n${recs.slice(1, 4).map((r) => `#${r.rank} ${r.holder}: ${r.value}`).join('. ')}`,
+      key_stats: recs.slice(0, 4).map((r) => ({
+        label: `#${r.rank ?? '?'} ${r.holder ?? ''}`,
+        value: r.value ?? '—',
+        context: r.category ?? '',
+      })),
+      confidence: 'high',
+      follow_up: 'How many World Cup goals has Cristiano Ronaldo scored in his career?',
+      data_sources: [sourceLabel, 'worldCupRecords collection'],
+      live_data: true,
+    }
+  }
+
   if (key === 'headToHead' || records[0]?.team1 !== undefined) {
     const h2h = records as H2HRecord[]
     const record = h2h[0]

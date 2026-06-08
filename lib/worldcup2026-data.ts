@@ -246,6 +246,12 @@ const H2H_DATA: H2HRecord[] = [
   { team1: 'Mexico', team2: 'United States', totalMatches: 18, team1Wins: 7, team2Wins: 6, draws: 5, lastFive: [{ date: '2024-03-24', result: '2-0 Mexico', competition: 'CONCACAF Nations League' }, { date: '2023-10-22', result: '2-3 USA', competition: 'Friendly' }] },
   { team1: 'Portugal', team2: 'Spain', totalMatches: 9, team1Wins: 3, team2Wins: 4, draws: 2, lastFive: [{ date: '2022-09-27', result: '1-0 Spain', competition: 'Nations League' }] },
   { team1: 'Morocco', team2: 'Spain', totalMatches: 5, team1Wins: 1, team2Wins: 3, draws: 1, lastFive: [{ date: '2022-12-06', result: '0-0 (3-0 pens) Morocco', competition: 'World Cup' }] },
+  { team1: 'Italy', team2: 'Switzerland', totalMatches: 6, team1Wins: 3, team2Wins: 1, draws: 2, lastFive: [{ date: '2021-09-05', result: '1-1 Draw', competition: 'Nations League' }, { date: '2020-11-17', result: '2-0 Italy', competition: 'Nations League' }] },
+  { team1: 'Canada', team2: 'Switzerland', totalMatches: 4, team1Wins: 1, team2Wins: 2, draws: 1, lastFive: [{ date: '2024-06-29', result: '2-0 Switzerland', competition: 'Friendly' }] },
+  { team1: 'Italy', team2: 'Qatar', totalMatches: 1, team1Wins: 1, team2Wins: 0, draws: 0, lastFive: [{ date: '2022-11-20', result: '2-1 Italy', competition: 'Friendly' }] },
+  { team1: 'Portugal', team2: 'Colombia', totalMatches: 3, team1Wins: 2, team2Wins: 0, draws: 1, lastFive: [{ date: '2014-06-10', result: '0-0 Draw', competition: 'Friendly' }, { date: '2011-02-09', result: '1-0 Portugal', competition: 'Friendly' }] },
+  { team1: 'Portugal', team2: 'Czech Republic', totalMatches: 4, team1Wins: 2, team2Wins: 1, draws: 1, lastFive: [{ date: '2022-09-24', result: '2-0 Portugal', competition: 'Nations League' }] },
+  { team1: 'Colombia', team2: 'Czech Republic', totalMatches: 2, team1Wins: 1, team2Wins: 0, draws: 1, lastFive: [{ date: '2018-05-29', result: '1-1 Draw', competition: 'Friendly' }] },
 ]
 
 function teamGroup(name: string): string {

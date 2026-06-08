@@ -5,13 +5,24 @@ import { sanitizeQueryPlan } from '@/lib/query-safety'
 import { getDefaultQueryForType } from '@/lib/query-defaults'
 import { updateMatchResult, updatePlayerStats } from '@/lib/mongo-writes'
 
-const COLLECTIONS = ['matches', 'players', 'teams', 'headToHead', 'groups', 'tournament'] as const
+const COLLECTIONS = [
+  'matches',
+  'players',
+  'teams',
+  'headToHead',
+  'groups',
+  'tournament',
+  'playerWorldCupCareers',
+  'worldCupEditions',
+  'worldCupRecords',
+] as const
 
 export const queryFootballDataTool = new FunctionTool({
   name: 'query_football_data',
   description:
-    'Query World Cup 2026 football intelligence from MongoDB Atlas. ' +
-    'Collections: matches, players, teams, headToHead, groups, tournament. ' +
+    'Query World Cup football intelligence from MongoDB Atlas. ' +
+    'Collections: matches, players, teams, headToHead, groups, tournament, ' +
+    'playerWorldCupCareers (career stats 1930–2022), worldCupEditions, worldCupRecords. ' +
     'Use read-only aggregation pipelines only.',
   parameters: z.object({
     collection: z.enum(COLLECTIONS).describe('MongoDB collection to query'),

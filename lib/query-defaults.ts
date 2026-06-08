@@ -1,4 +1,5 @@
 import type { MongoQueryPlan, QuestionType } from './types'
+import { matchHistoricalQuery } from './worldcup-historical-data'
 
 export function getDefaultQueryForType(
   questionType: QuestionType,
@@ -7,7 +8,9 @@ export function getDefaultQueryForType(
   const q = question.toLowerCase()
 
   switch (questionType) {
-    case 'stats':
+    case 'stats': {
+      const historical = matchHistoricalQuery(question)
+      if (historical) return historical
       if (q.includes('scorer') || q.includes('goal')) {
         return {
           collection: 'players',
@@ -26,6 +29,7 @@ export function getDefaultQueryForType(
         collection: 'players',
         pipeline: [{ $sort: { goals: -1 } }, { $limit: 8 }],
       }
+    }
     case 'prediction':
       return {
         collection: 'matches',
@@ -45,11 +49,14 @@ export function getDefaultQueryForType(
         collection: 'teams',
         pipeline: [{ $sort: { possession: -1 } }],
       }
-    case 'historical':
+    case 'historical': {
+      const historical = matchHistoricalQuery(question)
+      if (historical) return historical
       return {
         collection: 'headToHead',
         pipeline: [{ $limit: 5 }],
       }
+    }
     default:
       return {
         collection: 'teams',
