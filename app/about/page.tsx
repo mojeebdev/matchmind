@@ -84,6 +84,49 @@ export default function AboutPage() {
             and head-to-head history.
           </p>
 
+          <div
+            style={{
+              marginBottom: '28px',
+              padding: '20px 24px',
+              borderRadius: '10px',
+              border: '1px solid var(--gold-border)',
+              background: 'var(--gold-dim)',
+            }}
+          >
+            <p style={{ margin: 0, color: 'var(--ink-primary)', lineHeight: 1.75 }}>
+              Built by{' '}
+              <a
+                href="https://mojeeb.xyz"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ color: 'var(--gold)', textDecoration: 'none' }}
+              >
+                Mojeeb Titilayo
+              </a>{' '}
+              (
+              <a
+                href="https://x.com/mojeebeth"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ color: 'var(--gold)', textDecoration: 'none' }}
+              >
+                @mojeebeth
+              </a>
+              ) at{' '}
+              <a
+                href="https://blindspotlab.xyz"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ color: 'var(--gold)', textDecoration: 'none' }}
+              >
+                BlindspotLab
+              </a>
+              , Lagos — for the Google Cloud Rapid Agent Hackathon 2026, MongoDB Partner Track.
+              MatchMind was built in 3 days because football fans deserve analyst-grade
+              intelligence, not just search results.
+            </p>
+          </div>
+
           <p style={{ marginBottom: '20px' }}>
             MatchMind is not a gambling or betting app, not a live TV broadcast, and not a social
             network. Optional Google Sign-In creates a MatchMind account so users can save agent
