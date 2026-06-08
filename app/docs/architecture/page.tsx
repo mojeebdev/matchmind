@@ -127,7 +127,8 @@ export default function ArchitecturePage() {
             <li><code style={gold}>npm run sync</code> — local private pipeline (gitignored)</li>
           </ul>
           <p>
-            Preview mockup before kickoff; live synced results after. Not a FIFA broadcast feed.
+            Powered by live MongoDB sync after tournament kickoff. Independent of any official
+            broadcast data feed. Preview mockup before kickoff; live synced results after.
           </p>
 
           <h2 style={h2}>Security</h2>

@@ -22,7 +22,7 @@ Ask it anything:
 
 It classifies intent, queries the MongoDB football intelligence database via MCP, and returns structured analyst-grade responses with key stats, confidence signals, and follow-up suggestions.
 
-> **Data note:** MatchMind is **not** a live FIFA broadcast feed. Before World Cup kickoff (**11 June 2026**), the agent shows **◇ Preview mockup** data — illustrative sample scores and stats stored in MongoDB, clearly labeled in the UI. After kickoff, responses switch to **● Live MongoDB** as real results are synced.
+> **Data note:** Powered by live MongoDB sync after tournament kickoff. Independent of any official broadcast data feed. Before kickoff (**11 June 2026**), the agent shows **◇ Preview mockup** data — illustrative sample scores, clearly labeled in the UI. After kickoff, responses switch to **● Live MongoDB** as real results are synced.
 
 ### Data modes
 

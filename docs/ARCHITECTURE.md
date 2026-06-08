@@ -79,7 +79,7 @@ UI: `/agent/admin`
 | Admin agent | `/agent/admin` | Natural-language writes |
 | Local sync | `npm run sync` | Private `scripts/sync.ts` + `data/sync/feed.json` (gitignored) |
 
-> Before kickoff: **preview mockup** data (clearly labeled). After kickoff: **live** synced results. Not a FIFA broadcast API feed.
+> Powered by live MongoDB sync after tournament kickoff. Independent of any official broadcast data feed. Before kickoff: **preview mockup** (clearly labeled). After kickoff: **live** synced results.
 
 ---
 
