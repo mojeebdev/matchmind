@@ -7,7 +7,7 @@ export { getAllRosterNames }
 const PREVIEW_TOP_SCORERS = new Set([
   'Lionel Messi', 'Lautaro Martínez', 'Kylian Mbappé', 'Harry Kane', 'Vinícius Jr.',
   'Bukayo Saka', 'Lamine Yamal', 'Christian Pulisic', 'Sadio Mané', 'Luis Díaz',
-  'Cristiano Ronaldo', 'Rodrygo', 'Jamal Musiala', 'Federico Chiesa',
+  'Cristiano Ronaldo', 'Rodrygo', 'Jamal Musiala', 'Patrik Schick',
 ])
 
 const PREVIEW_STATS: Record<string, { goals: number; assists: number; xG: number; minutes: number }> = {
@@ -24,7 +24,7 @@ const PREVIEW_STATS: Record<string, { goals: number; assists: number; xG: number
   'Cristiano Ronaldo': { goals: 2, assists: 1, xG: 1.9, minutes: 240 },
   'Rodrygo': { goals: 3, assists: 1, xG: 2.4, minutes: 255 },
   'Jamal Musiala': { goals: 2, assists: 2, xG: 1.8, minutes: 248 },
-  'Federico Chiesa': { goals: 2, assists: 1, xG: 1.6, minutes: 230 },
+  'Patrik Schick': { goals: 2, assists: 1, xG: 1.6, minutes: 230 },
 }
 
 function teamGroup(team: string, groups: Record<string, string[]>): string {

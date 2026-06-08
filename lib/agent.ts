@@ -73,7 +73,7 @@ Given a question type and user question, generate the optimal MongoDB aggregatio
 
 Database collections:
 - matches: { homeTeam, awayTeam, score, date, stage, group, stats }
-- players: { name, team, goals, assists, xG, minutes, position, club, clubForm, recentClubMatches, worldCupHistory } — full 2026 squad profiles (48 teams, ~20 players each)
+- players: { name, team, goals, assists, xG, minutes, position, club, clubForm, recentClubMatches, worldCupHistory } — official 2026 tournament squads when FIFA publishes them (empty until then)
 - teams: { name, group, form, possession, shotsOnTarget, cleanSheets }
 - headToHead: { team1, team2, matches[], wins, draws, losses }
 - playerWorldCupCareers: { name, totalGoals, totalAppearances, appearances[], careerSummary } — factual 1930–2022 career data
@@ -189,7 +189,7 @@ Return ONLY valid JSON in this exact shape:
 }`
 
     const tournamentNote = isPreviewMode()
-      ? `Tournament state: PREVIEW MOCKUP before kickoff (11 June 2026). The MongoDB figures are illustrative demo data for UX — always disclose they are preview mockup, not real match results. Historical head-to-head records are real past meetings.`
+      ? `Tournament state: PREVIEW MOCKUP before kickoff (11 June 2026). Groups, fixtures, venues, and kickoff times are OFFICIAL (FIFA Dec 2025 draw). Scores, standings, and player tournament stats are illustrative mockup — always disclose which is which. Historical head-to-head and World Cup career data are verified past records.`
       : `Tournament state: LIVE — use only synced MongoDB results. Never invent scores. Historical head-to-head data refers to past meetings, not current-tournament matches unless present in the data.`
 
     const userPrompt = `${formatUserContextBlock(userContext)}Question: ${question}

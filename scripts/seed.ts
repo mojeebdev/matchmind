@@ -105,14 +105,20 @@ async function seed() {
     const teamsResult = await db.collection('teams').insertMany(dataset.teams)
     console.log(`Seeded ${teamsResult.insertedCount} teams (12 groups A–L)`)
 
-    const playersResult = await db.collection('players').insertMany(dataset.players)
-    console.log(`Seeded ${playersResult.insertedCount} players (48 squads · club form · WC history)`)
+    if (dataset.players.length > 0) {
+      const playersResult = await db.collection('players').insertMany(dataset.players)
+      console.log(`Seeded ${playersResult.insertedCount} players`)
+    } else {
+      console.log(
+        'Skipped players collection — official FIFA tournament squads not published yet'
+      )
+    }
 
     const matchesResult = await db.collection('matches').insertMany(dataset.matches)
     const matchNote =
       dataset.tournament.dataMode === 'preview'
-        ? 'preview mockup results + knockouts'
-        : '72 group fixtures — scheduled, no results'
+        ? '104 official fixtures · group scores mockup · knockouts scheduled'
+        : '104 official fixtures — scheduled, no results'
     console.log(`Seeded ${matchesResult.insertedCount} matches (${matchNote})`)
 
     const h2hResult = await db.collection('headToHead').insertMany(dataset.h2h)
@@ -167,7 +173,7 @@ async function seed() {
       console.log('   Ask the agent: "Who are the top scorers in Group B?"')
     } else {
       console.log('\n✅ World Cup 2026 LIVE database ready!')
-      console.log('   48 teams · 12 groups · squads · scheduled fixtures · H2H')
+      console.log('   48 teams · 12 groups · 104 fixtures · H2H (squads pending FIFA)')
       console.log('   Run npm run sync after matches to update scores')
     }
   } catch (error) {

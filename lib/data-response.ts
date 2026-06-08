@@ -155,6 +155,25 @@ export function generateResponseFromMongoData(
 
   if (key === 'players' || records[0]?.goals !== undefined) {
     const players = records as LegacyPlayerRecord[]
+
+    if (players.length === 0) {
+      return {
+        question_type: questionType,
+        headline: 'Official Squads Not Published Yet',
+        answer:
+          `FIFA has not published official World Cup 2026 tournament squads yet. MatchMind does not seed curated or estimated rosters — only official FIFA data.\n\nYou can still ask about the 48-team draw, the 104-match schedule, group fixtures, head-to-head history, and past World Cup careers (1930–2022) via playerWorldCupCareers.\n\nThe players collection will be populated once FIFA publishes squads and you re-seed or sync.`,
+        key_stats: [
+          { label: 'Squads', value: 'Pending', context: 'Awaiting official FIFA publication' },
+          { label: 'Fixtures', value: '104 matches', context: 'Official schedule on file' },
+          { label: 'Teams', value: '48 nations', context: 'Dec 5 2025 final draw' },
+        ],
+        confidence: 'high',
+        follow_up: 'Which teams are in Group A and when do they play?',
+        data_sources: [sourceLabel, 'players collection (empty)'],
+        live_data: isLiveData,
+      }
+    }
+
     const sorted = [...players].sort(
       (a, b) => (b.goals ?? 0) - (a.goals ?? 0)
     )

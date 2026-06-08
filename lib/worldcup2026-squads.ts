@@ -1,34 +1,21 @@
+import { OFFICIAL_GROUPS_2026, FIFA_SQUAD_SIZE } from './worldcup2026-official-fixtures'
 import type { RosterTuple } from './player-types'
-import { GROUP_A_SQUADS } from './squads/group-a'
-import { GROUP_B_SQUADS } from './squads/group-b'
-import { GROUP_C_SQUADS } from './squads/group-c'
-import { GROUP_D_SQUADS } from './squads/group-d'
-import { GROUP_E_SQUADS } from './squads/group-e'
-import { GROUP_F_SQUADS } from './squads/group-f'
-import { GROUP_G_SQUADS } from './squads/group-g'
-import { GROUP_H_SQUADS } from './squads/group-h'
-import { GROUP_I_SQUADS } from './squads/group-i'
-import { GROUP_J_SQUADS } from './squads/group-j'
-import { GROUP_K_SQUADS } from './squads/group-k'
-import { GROUP_L_SQUADS } from './squads/group-l'
 
-export const WC2026_ROSTERS: Record<string, RosterTuple[]> = {
-  ...GROUP_A_SQUADS,
-  ...GROUP_B_SQUADS,
-  ...GROUP_C_SQUADS,
-  ...GROUP_D_SQUADS,
-  ...GROUP_E_SQUADS,
-  ...GROUP_F_SQUADS,
-  ...GROUP_G_SQUADS,
-  ...GROUP_H_SQUADS,
-  ...GROUP_I_SQUADS,
-  ...GROUP_J_SQUADS,
-  ...GROUP_K_SQUADS,
-  ...GROUP_L_SQUADS,
+/** Official FIFA tournament squads are not published yet — no curated rosters. */
+export const WC2026_ROSTERS: Record<string, RosterTuple[]> = Object.fromEntries(
+  Object.values(OFFICIAL_GROUPS_2026)
+    .flat()
+    .map((team) => [team, [] as RosterTuple[]])
+)
+
+export const WC2026_SQUAD_SIZE = FIFA_SQUAD_SIZE
+
+export function hasOfficialSquads(): boolean {
+  return getTotalPlayerCount() > 0
 }
 
 export function getAllRosterNames(): string[] {
-  return Object.values(WC2026_ROSTERS).flatMap((roster) => roster.map((p) => p[0]))
+  return []
 }
 
 export function getRosterTeamCount(): number {
@@ -36,5 +23,5 @@ export function getRosterTeamCount(): number {
 }
 
 export function getTotalPlayerCount(): number {
-  return Object.values(WC2026_ROSTERS).reduce((sum, roster) => sum + roster.length, 0)
+  return 0
 }

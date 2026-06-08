@@ -1,12 +1,25 @@
 /**
  * FIFA World Cup 2026 intelligence dataset
- * 48 teams · 12 groups (A–L) · squads · fixtures · historical H2H
- * Preview mode (before kickoff): illustrative mockup stats — clearly labeled in UI
- * Live mode (after kickoff): real results via npm run sync / admin agent
+ * 48 teams · 12 groups (A–L) · fixtures · historical H2H (squads pending FIFA)
+ *
+ * OFFICIAL (FIFA Dec 5 2025 draw + published schedule): groups, fixtures, venues, kickoff times
+ * MOCKUP (preview mode only): illustrative scores, player tournament stats, sample knockouts
+ * LIVE (post-kickoff): real results via npm run sync / admin agent
+ *
+ * See docs/DATA-SOURCES.md for the full real vs mockup breakdown.
  */
 
 import { getTournamentDataMode, isPreviewMode } from './tournament-phase'
 import { buildFullSquads } from './squad-builder'
+import {
+  OFFICIAL_GROUPS_2026,
+  OFFICIAL_GROUP_FIXTURES,
+  OFFICIAL_KNOCKOUT_FIXTURES,
+  OFFICIAL_VENUES,
+  FIFA_TOTAL_MATCHES,
+  FIFA_SQUAD_SIZE,
+} from './worldcup2026-official-fixtures'
+import { getTotalPlayerCount } from './worldcup2026-squads'
 import type { PlayerRecord } from './player-types'
 
 export type { PlayerRecord, ClubMatch, WorldCupHistorySummary } from './player-types'
@@ -37,11 +50,12 @@ export type MatchRecord = {
   score: { home: number; away: number }
   status: 'scheduled' | 'live' | 'finished'
   date: Date
-  stage: 'group' | 'round-of-32' | 'round-of-16' | 'quarter' | 'semi' | 'final'
+  stage: 'group' | 'round-of-32' | 'round-of-16' | 'quarter' | 'semi' | 'third-place' | 'final'
   group: string | null
   venue: string
   city: string
   matchday: number
+  fifaMatchNumber?: number
   stats: {
     possession: { home: number; away: number }
     shots: { home: number; away: number }
@@ -59,122 +73,39 @@ export type H2HRecord = {
   lastFive: { date: string; result: string; competition: string }[]
 }
 
-export const GROUPS_2026: Record<string, string[]> = {
-  A: ['Mexico', 'South Africa', 'South Korea', 'Denmark'],
-  B: ['Canada', 'Switzerland', 'Qatar', 'Italy'],
-  C: ['Brazil', 'Morocco', 'Haiti', 'Scotland'],
-  D: ['United States', 'Paraguay', 'Australia', 'Turkey'],
-  E: ['Germany', 'Curaçao', 'Ivory Coast', 'Ecuador'],
-  F: ['Netherlands', 'Japan', 'Ukraine', 'Tunisia'],
-  G: ['Belgium', 'Iran', 'New Zealand', 'Egypt'],
-  H: ['Spain', 'Cape Verde', 'Saudi Arabia', 'Uruguay'],
-  I: ['France', 'Senegal', 'Bolivia', 'Norway'],
-  J: ['Argentina', 'Algeria', 'Austria', 'Jordan'],
-  K: ['Portugal', 'Uzbekistan', 'Colombia', 'Czech Republic'],
-  L: ['England', 'Ghana', 'Panama', 'Croatia'],
-}
+export const GROUPS_2026 = OFFICIAL_GROUPS_2026
 
 const CONFEDERATION: Record<string, string> = {
   Mexico: 'CONCACAF', Canada: 'CONCACAF', 'United States': 'CONCACAF', Panama: 'CONCACAF', Haiti: 'CONCACAF', Curaçao: 'CONCACAF',
-  Brazil: 'CONMEBOL', Argentina: 'CONMEBOL', Uruguay: 'CONMEBOL', Colombia: 'CONMEBOL', Ecuador: 'CONMEBOL', Paraguay: 'CONMEBOL', Bolivia: 'CONMEBOL',
-  France: 'UEFA', England: 'UEFA', Spain: 'UEFA', Germany: 'UEFA', Portugal: 'UEFA', Netherlands: 'UEFA', Belgium: 'UEFA', Italy: 'UEFA',
-  Croatia: 'UEFA', Switzerland: 'UEFA', Denmark: 'UEFA', Scotland: 'UEFA', Norway: 'UEFA', Austria: 'UEFA', 'Czech Republic': 'UEFA', Turkey: 'UEFA', Ukraine: 'UEFA',
-  Morocco: 'CAF', Senegal: 'CAF', Ghana: 'CAF', 'Ivory Coast': 'CAF', Egypt: 'CAF', Algeria: 'CAF', Tunisia: 'CAF', 'South Africa': 'CAF', 'Cape Verde': 'CAF',
-  Japan: 'AFC', 'South Korea': 'AFC', Australia: 'AFC', Iran: 'AFC', 'Saudi Arabia': 'AFC', Qatar: 'AFC', Jordan: 'AFC', Uzbekistan: 'AFC',
+  Brazil: 'CONMEBOL', Argentina: 'CONMEBOL', Uruguay: 'CONMEBOL', Colombia: 'CONMEBOL', Ecuador: 'CONMEBOL', Paraguay: 'CONMEBOL',
+  France: 'UEFA', England: 'UEFA', Spain: 'UEFA', Germany: 'UEFA', Portugal: 'UEFA', Netherlands: 'UEFA', Belgium: 'UEFA',
+  Croatia: 'UEFA', Switzerland: 'UEFA', Scotland: 'UEFA', Norway: 'UEFA', Austria: 'UEFA', 'Czech Republic': 'UEFA', Turkey: 'UEFA',
+  Sweden: 'UEFA', 'Bosnia and Herzegovina': 'UEFA',
+  Morocco: 'CAF', Senegal: 'CAF', Ghana: 'CAF', 'Ivory Coast': 'CAF', Egypt: 'CAF', Algeria: 'CAF', Tunisia: 'CAF', 'South Africa': 'CAF',
+  'Cape Verde': 'CAF', 'DR Congo': 'CAF',
+  Japan: 'AFC', 'South Korea': 'AFC', Australia: 'AFC', Iran: 'AFC', 'Saudi Arabia': 'AFC', Qatar: 'AFC', Jordan: 'AFC', Uzbekistan: 'AFC', Iraq: 'AFC',
   'New Zealand': 'OFC',
 }
 
 const FIFA_RANK: Record<string, number> = {
-  Argentina: 1, France: 2, Brazil: 3, England: 4, Spain: 5, Portugal: 6, Netherlands: 7, Belgium: 8, Germany: 9, Italy: 10,
-  Croatia: 11, Morocco: 12, Colombia: 13, Uruguay: 14, Mexico: 15, 'United States': 16, Japan: 17, Senegal: 18, Switzerland: 19,
-  Iran: 20, Denmark: 21, 'South Korea': 22, Ecuador: 23, Austria: 24, Turkey: 25, Canada: 26, Norway: 27, Australia: 28, Scotland: 29,
-  Algeria: 30, Paraguay: 31, 'Czech Republic': 32, Egypt: 33, Tunisia: 34, 'Ivory Coast': 35, Qatar: 36, 'South Africa': 37, Ghana: 38,
-  Panama: 39, Uzbekistan: 40, Jordan: 41, Bolivia: 42, Haiti: 43, 'Cape Verde': 44, 'New Zealand': 45, 'Saudi Arabia': 46, Ukraine: 47, Curaçao: 48,
+  Argentina: 1, France: 2, Brazil: 3, England: 4, Spain: 5, Portugal: 6, Netherlands: 7, Belgium: 8, Germany: 9, Croatia: 10,
+  Morocco: 11, Colombia: 12, Uruguay: 13, 'United States': 14, Mexico: 15, Japan: 16, Senegal: 17, Switzerland: 18, Iran: 19,
+  'South Korea': 20, Ecuador: 21, Austria: 22, Australia: 23, Norway: 24, Turkey: 25, Canada: 26, Scotland: 27, Paraguay: 28,
+  Sweden: 29, Panama: 30, Algeria: 31, Egypt: 32, Tunisia: 33, 'Ivory Coast': 34, Qatar: 35, 'South Africa': 36, Ghana: 37,
+  Uzbekistan: 38, Jordan: 39, 'Czech Republic': 40, Iraq: 41, Haiti: 42, 'Cape Verde': 43, 'New Zealand': 44, 'Saudi Arabia': 45,
+  'Bosnia and Herzegovina': 46, 'DR Congo': 47, Curaçao: 48,
 }
 
 const COACHES: Record<string, string> = {
   Argentina: 'Lionel Scaloni', Brazil: 'Dorival Júnior', France: 'Didier Deschamps', England: 'Gareth Southgate',
   Spain: 'Luis de la Fuente', Germany: 'Julian Nagelsmann', Portugal: 'Roberto Martínez', Netherlands: 'Ronald Koeman',
-  Belgium: 'Domenico Tedesco', Italy: 'Luciano Spalletti', Mexico: 'Javier Aguirre', 'United States': 'Mauricio Pochettino',
+  Belgium: 'Domenico Tedesco', Mexico: 'Javier Aguirre', 'United States': 'Mauricio Pochettino',
   Canada: 'Jesse Marsch', Morocco: 'Walid Regragui', Japan: 'Hajime Moriyasu', Croatia: 'Zlatko Dalić', Colombia: 'Néstor Lorenzo',
+  'Czech Republic': 'Ivan Hašek', 'Bosnia and Herzegovina': 'Sergej Barbarez', Sweden: 'Jon Dahl Tomasson',
+  Iraq: 'Jesús Casas', 'DR Congo': 'Sébastien Desabre',
 }
 
-const VENUES = [
-  { venue: 'MetLife Stadium', city: 'New York/New Jersey' },
-  { venue: 'SoFi Stadium', city: 'Los Angeles' },
-  { venue: 'AT&T Stadium', city: 'Dallas' },
-  { venue: 'Mercedes-Benz Stadium', city: 'Atlanta' },
-  { venue: 'Hard Rock Stadium', city: 'Miami' },
-  { venue: 'Estadio Azteca', city: 'Mexico City' },
-  { venue: 'Estadio Akron', city: 'Guadalajara' },
-  { venue: 'BC Place', city: 'Vancouver' },
-  { venue: 'BMO Field', city: 'Toronto' },
-  { venue: 'Lincoln Financial Field', city: 'Philadelphia' },
-]
-
-/** Group stage fixtures — MD1–MD3 for all 12 groups (no results until synced) */
-const GROUP_FIXTURES: Record<string, [string, string][]> = {
-  A: [
-    ['Mexico', 'South Africa'], ['South Korea', 'Denmark'],
-    ['Denmark', 'Mexico'], ['South Africa', 'South Korea'],
-    ['Mexico', 'South Korea'], ['Denmark', 'South Africa'],
-  ],
-  B: [
-    ['Canada', 'Switzerland'], ['Qatar', 'Italy'],
-    ['Italy', 'Canada'], ['Switzerland', 'Qatar'],
-    ['Canada', 'Qatar'], ['Italy', 'Switzerland'],
-  ],
-  C: [
-    ['Brazil', 'Morocco'], ['Haiti', 'Scotland'],
-    ['Scotland', 'Brazil'], ['Morocco', 'Haiti'],
-    ['Brazil', 'Haiti'], ['Morocco', 'Scotland'],
-  ],
-  D: [
-    ['United States', 'Paraguay'], ['Australia', 'Turkey'],
-    ['Turkey', 'United States'], ['Paraguay', 'Australia'],
-    ['United States', 'Australia'], ['Turkey', 'Paraguay'],
-  ],
-  E: [
-    ['Germany', 'Curaçao'], ['Ivory Coast', 'Ecuador'],
-    ['Ecuador', 'Germany'], ['Curaçao', 'Ivory Coast'],
-    ['Germany', 'Ivory Coast'], ['Ecuador', 'Curaçao'],
-  ],
-  F: [
-    ['Netherlands', 'Japan'], ['Ukraine', 'Tunisia'],
-    ['Tunisia', 'Netherlands'], ['Japan', 'Ukraine'],
-    ['Netherlands', 'Ukraine'], ['Japan', 'Tunisia'],
-  ],
-  G: [
-    ['Belgium', 'Iran'], ['New Zealand', 'Egypt'],
-    ['Egypt', 'Belgium'], ['Iran', 'New Zealand'],
-    ['Belgium', 'New Zealand'], ['Egypt', 'Iran'],
-  ],
-  H: [
-    ['Spain', 'Cape Verde'], ['Saudi Arabia', 'Uruguay'],
-    ['Uruguay', 'Spain'], ['Cape Verde', 'Saudi Arabia'],
-    ['Spain', 'Saudi Arabia'], ['Uruguay', 'Cape Verde'],
-  ],
-  I: [
-    ['France', 'Senegal'], ['Bolivia', 'Norway'],
-    ['Norway', 'France'], ['Senegal', 'Bolivia'],
-    ['France', 'Bolivia'], ['Senegal', 'Norway'],
-  ],
-  J: [
-    ['Argentina', 'Algeria'], ['Austria', 'Jordan'],
-    ['Jordan', 'Argentina'], ['Algeria', 'Austria'],
-    ['Argentina', 'Austria'], ['Algeria', 'Jordan'],
-  ],
-  K: [
-    ['Portugal', 'Uzbekistan'], ['Colombia', 'Czech Republic'],
-    ['Czech Republic', 'Portugal'], ['Uzbekistan', 'Colombia'],
-    ['Portugal', 'Colombia'], ['Czech Republic', 'Uzbekistan'],
-  ],
-  L: [
-    ['England', 'Ghana'], ['Panama', 'Croatia'],
-    ['Croatia', 'England'], ['Ghana', 'Panama'],
-    ['England', 'Panama'], ['Croatia', 'Ghana'],
-  ],
-}
+const VENUES = [...OFFICIAL_VENUES]
 
 const H2H_DATA: H2HRecord[] = [
   { team1: 'Brazil', team2: 'France', totalMatches: 12, team1Wins: 5, team2Wins: 4, draws: 3, lastFive: [{ date: '2022-11-26', result: '2-1 Brazil', competition: 'World Cup' }, { date: '2021-06-08', result: '3-0 France', competition: 'Friendly' }, { date: '2018-07-07', result: '2-1 France', competition: 'World Cup' }] },
@@ -185,12 +116,12 @@ const H2H_DATA: H2HRecord[] = [
   { team1: 'Mexico', team2: 'United States', totalMatches: 18, team1Wins: 7, team2Wins: 6, draws: 5, lastFive: [{ date: '2024-03-24', result: '2-0 Mexico', competition: 'CONCACAF Nations League' }, { date: '2023-10-22', result: '2-3 USA', competition: 'Friendly' }] },
   { team1: 'Portugal', team2: 'Spain', totalMatches: 9, team1Wins: 3, team2Wins: 4, draws: 2, lastFive: [{ date: '2022-09-27', result: '1-0 Spain', competition: 'Nations League' }] },
   { team1: 'Morocco', team2: 'Spain', totalMatches: 5, team1Wins: 1, team2Wins: 3, draws: 1, lastFive: [{ date: '2022-12-06', result: '0-0 (3-0 pens) Morocco', competition: 'World Cup' }] },
-  { team1: 'Italy', team2: 'Switzerland', totalMatches: 6, team1Wins: 3, team2Wins: 1, draws: 2, lastFive: [{ date: '2021-09-05', result: '1-1 Draw', competition: 'Nations League' }, { date: '2020-11-17', result: '2-0 Italy', competition: 'Nations League' }] },
   { team1: 'Canada', team2: 'Switzerland', totalMatches: 4, team1Wins: 1, team2Wins: 2, draws: 1, lastFive: [{ date: '2024-06-29', result: '2-0 Switzerland', competition: 'Friendly' }] },
-  { team1: 'Italy', team2: 'Qatar', totalMatches: 1, team1Wins: 1, team2Wins: 0, draws: 0, lastFive: [{ date: '2022-11-20', result: '2-1 Italy', competition: 'Friendly' }] },
+  { team1: 'Bosnia and Herzegovina', team2: 'Switzerland', totalMatches: 3, team1Wins: 0, team2Wins: 2, draws: 1, lastFive: [{ date: '2023-09-08', result: '2-1 Switzerland', competition: 'Euro Qualifier' }] },
   { team1: 'Portugal', team2: 'Colombia', totalMatches: 3, team1Wins: 2, team2Wins: 0, draws: 1, lastFive: [{ date: '2014-06-10', result: '0-0 Draw', competition: 'Friendly' }, { date: '2011-02-09', result: '1-0 Portugal', competition: 'Friendly' }] },
-  { team1: 'Portugal', team2: 'Czech Republic', totalMatches: 4, team1Wins: 2, team2Wins: 1, draws: 1, lastFive: [{ date: '2022-09-24', result: '2-0 Portugal', competition: 'Nations League' }] },
-  { team1: 'Colombia', team2: 'Czech Republic', totalMatches: 2, team1Wins: 1, team2Wins: 0, draws: 1, lastFive: [{ date: '2018-05-29', result: '1-1 Draw', competition: 'Friendly' }] },
+  { team1: 'South Korea', team2: 'Czech Republic', totalMatches: 3, team1Wins: 2, team2Wins: 1, draws: 0, lastFive: [{ date: '2016-06-01', result: '2-1 South Korea', competition: 'Friendly' }] },
+  { team1: 'Netherlands', team2: 'Sweden', totalMatches: 8, team1Wins: 3, team2Wins: 3, draws: 2, lastFive: [{ date: '2020-11-11', result: '1-1 Draw', competition: 'Nations League' }] },
+  { team1: 'France', team2: 'Senegal', totalMatches: 2, team1Wins: 1, team2Wins: 0, draws: 1, lastFive: [{ date: '2022-05-31', result: '1-1 Draw', competition: 'Friendly' }] },
 ]
 
 function teamGroup(name: string): string {
@@ -200,13 +131,8 @@ function teamGroup(name: string): string {
   return '?'
 }
 
-function keyPlayerForTeam(team: string, squads: PlayerRecord[]): string {
-  return squads.find((p) => p.team === team && p.squadNumber <= 14)?.name ?? team
-}
-
 function buildStandings(): TeamRecord[] {
   const stats = new Map<string, TeamRecord>()
-  const squads = buildFullSquads(GROUPS_2026, false)
 
   for (const [group, teams] of Object.entries(GROUPS_2026)) {
     for (const name of teams) {
@@ -220,7 +146,7 @@ function buildStandings(): TeamRecord[] {
         possession: 50, form: [],
         shotsOnTarget: 0, cleanSheets: 0,
         coach: COACHES[name] ?? 'TBD',
-        keyPlayer: keyPlayerForTeam(name, squads),
+        keyPlayer: 'TBD',
       })
     }
   }
@@ -228,116 +154,117 @@ function buildStandings(): TeamRecord[] {
   return Array.from(stats.values()).sort((a, b) => a.group.localeCompare(b.group) || a.name.localeCompare(b.name))
 }
 
-function buildMatches(): MatchRecord[] {
-  const matches: MatchRecord[] = []
-  const baseDate = new Date('2026-06-11T18:00:00Z')
-  let dayOffset = 0
-
-  for (const [group, fixtures] of Object.entries(GROUP_FIXTURES)) {
-    fixtures.forEach(([home, away], idx) => {
-      const matchday = Math.floor(idx / 2) + 1
-      const venue = VENUES[(dayOffset + idx) % VENUES.length]
-      matches.push({
-        homeTeam: home,
-        awayTeam: away,
-        score: { home: 0, away: 0 },
-        status: 'scheduled',
-        date: new Date(baseDate.getTime() + (dayOffset + idx) * 86400000 * 0.5),
-        stage: 'group',
-        group,
-        matchday,
-        venue: venue.venue,
-        city: venue.city,
-        stats: {
-          possession: { home: 50, away: 50 },
-          shots: { home: 0, away: 0 },
-          xG: { home: 0, away: 0 },
-        },
-      })
-    })
-    dayOffset += 2
+function groupFixtureToMatch(
+  f: (typeof OFFICIAL_GROUP_FIXTURES)[number],
+  fifaMatchNumber: number,
+  overrides: Partial<Pick<MatchRecord, 'score' | 'status' | 'stats'>> = {}
+): MatchRecord {
+  return {
+    homeTeam: f.homeTeam,
+    awayTeam: f.awayTeam,
+    score: overrides.score ?? { home: 0, away: 0 },
+    status: overrides.status ?? 'scheduled',
+    date: new Date(f.date),
+    stage: 'group',
+    group: f.group,
+    matchday: f.matchday,
+    fifaMatchNumber,
+    venue: f.venue,
+    city: f.city,
+    stats: overrides.stats ?? {
+      possession: { home: 50, away: 50 },
+      shots: { home: 0, away: 0 },
+      xG: { home: 0, away: 0 },
+    },
   }
+}
 
-  return matches.sort((a, b) => a.date.getTime() - b.date.getTime())
+function knockoutFixtureToMatch(
+  f: (typeof OFFICIAL_KNOCKOUT_FIXTURES)[number],
+  overrides: Partial<Pick<MatchRecord, 'score' | 'status' | 'stats'>> = {}
+): MatchRecord {
+  return {
+    homeTeam: f.homeTeam,
+    awayTeam: f.awayTeam,
+    score: overrides.score ?? { home: 0, away: 0 },
+    status: overrides.status ?? 'scheduled',
+    date: new Date(f.date),
+    stage: f.stage,
+    group: null,
+    matchday: 0,
+    fifaMatchNumber: f.fifaMatchNumber,
+    venue: f.venue,
+    city: f.city,
+    stats: overrides.stats ?? {
+      possession: { home: 50, away: 50 },
+      shots: { home: 0, away: 0 },
+      xG: { home: 0, away: 0 },
+    },
+  }
+}
+
+function buildMatches(): MatchRecord[] {
+  const groupMatches = OFFICIAL_GROUP_FIXTURES.map((f, idx) =>
+    groupFixtureToMatch(f, idx + 1)
+  )
+  const knockoutMatches = OFFICIAL_KNOCKOUT_FIXTURES.map((f) =>
+    knockoutFixtureToMatch(f)
+  )
+  return [...groupMatches, ...knockoutMatches].sort(
+    (a, b) => a.date.getTime() - b.date.getTime()
+  )
 }
 
 function buildPlayers(): PlayerRecord[] {
   return buildFullSquads(GROUPS_2026, false)
 }
 
-const PREVIEW_GROUP_RESULTS: Record<string, [string, string, number, number][]> = {
-  A: [
-    ['Mexico', 'South Africa', 2, 0], ['South Korea', 'Denmark', 1, 1],
-    ['Denmark', 'Mexico', 0, 1], ['South Africa', 'South Korea', 1, 2],
-    ['Mexico', 'South Korea', 2, 1], ['Denmark', 'South Africa', 3, 0],
-  ],
-  I: [
-    ['France', 'Senegal', 2, 0], ['Bolivia', 'Norway', 0, 1],
-    ['Norway', 'France', 1, 1], ['Senegal', 'Bolivia', 3, 0],
-    ['France', 'Bolivia', 4, 0], ['Senegal', 'Norway', 2, 1],
-  ],
-  B: [
-    ['Canada', 'Switzerland', 1, 1], ['Qatar', 'Italy', 0, 2],
-    ['Italy', 'Canada', 2, 0], ['Switzerland', 'Qatar', 3, 0],
-    ['Canada', 'Qatar', 4, 1], ['Italy', 'Switzerland', 1, 0],
-  ],
-  C: [
-    ['Brazil', 'Morocco', 2, 1], ['Haiti', 'Scotland', 0, 1],
-    ['Scotland', 'Brazil', 0, 3], ['Morocco', 'Haiti', 2, 0],
-    ['Brazil', 'Haiti', 4, 0], ['Morocco', 'Scotland', 1, 1],
-  ],
-  D: [
-    ['United States', 'Paraguay', 2, 0], ['Australia', 'Turkey', 1, 2],
-    ['Turkey', 'United States', 1, 1], ['Paraguay', 'Australia', 0, 0],
-    ['United States', 'Australia', 3, 1], ['Turkey', 'Paraguay', 2, 1],
-  ],
-  E: [
-    ['Germany', 'Curaçao', 5, 0], ['Ivory Coast', 'Ecuador', 1, 1],
-    ['Ecuador', 'Germany', 0, 2], ['Curaçao', 'Ivory Coast', 0, 3],
-    ['Germany', 'Ivory Coast', 1, 1], ['Ecuador', 'Curaçao', 3, 0],
-  ],
-  F: [
-    ['Netherlands', 'Japan', 2, 1], ['Ukraine', 'Tunisia', 1, 0],
-    ['Tunisia', 'Netherlands', 0, 0], ['Japan', 'Ukraine', 2, 2],
-    ['Netherlands', 'Ukraine', 3, 1], ['Japan', 'Tunisia', 1, 0],
-  ],
-  G: [
-    ['Belgium', 'Iran', 3, 0], ['New Zealand', 'Egypt', 0, 0],
-    ['Egypt', 'Belgium', 1, 2], ['Iran', 'New Zealand', 1, 0],
-    ['Belgium', 'New Zealand', 2, 0], ['Egypt', 'Iran', 0, 1],
-  ],
-  H: [
-    ['Spain', 'Cape Verde', 3, 0], ['Saudi Arabia', 'Uruguay', 0, 1],
-    ['Uruguay', 'Spain', 1, 2], ['Cape Verde', 'Saudi Arabia', 2, 1],
-    ['Spain', 'Saudi Arabia', 2, 0], ['Uruguay', 'Cape Verde', 4, 0],
-  ],
-  J: [
-    ['Argentina', 'Algeria', 2, 0], ['Austria', 'Jordan', 3, 1],
-    ['Jordan', 'Argentina', 0, 1], ['Algeria', 'Austria', 1, 1],
-    ['Argentina', 'Austria', 2, 1], ['Algeria', 'Jordan', 2, 0],
-  ],
-  K: [
-    ['Portugal', 'Uzbekistan', 3, 0], ['Colombia', 'Czech Republic', 2, 1],
-    ['Czech Republic', 'Portugal', 0, 2], ['Uzbekistan', 'Colombia', 0, 1],
-    ['Portugal', 'Colombia', 1, 1], ['Czech Republic', 'Uzbekistan', 2, 0],
-  ],
-  L: [
-    ['England', 'Ghana', 2, 0], ['Panama', 'Croatia', 0, 2],
-    ['Croatia', 'England', 1, 1], ['Ghana', 'Panama', 2, 1],
-    ['England', 'Panama', 3, 0], ['Croatia', 'Ghana', 1, 0],
-  ],
+/** Illustrative preview scores — keyed home|away, aligned to official fixture pairings */
+const PREVIEW_SCORES: Record<string, [number, number]> = {
+  'Mexico|South Africa': [2, 0], 'South Korea|Czech Republic': [1, 1],
+  'Canada|Bosnia and Herzegovina': [1, 1], 'Qatar|Switzerland': [0, 2],
+  'United States|Paraguay': [2, 0], 'Australia|Turkey': [1, 2],
+  'Brazil|Morocco': [2, 1], 'Haiti|Scotland': [0, 1],
+  'Germany|Curaçao': [5, 0], 'Ivory Coast|Ecuador': [1, 1],
+  'Netherlands|Japan': [2, 1], 'Sweden|Tunisia': [1, 0],
+  'Belgium|Egypt': [3, 0], 'Iran|New Zealand': [1, 0],
+  'Spain|Cape Verde': [3, 0], 'Saudi Arabia|Uruguay': [0, 1],
+  'France|Senegal': [2, 0], 'Iraq|Norway': [0, 1],
+  'Argentina|Algeria': [2, 0], 'Austria|Jordan': [3, 1],
+  'Portugal|DR Congo': [2, 0], 'Uzbekistan|Colombia': [0, 1],
+  'England|Croatia': [1, 1], 'Ghana|Panama': [2, 1],
+  'Czech Republic|South Africa': [1, 0], 'Switzerland|Bosnia and Herzegovina': [2, 0],
+  'Canada|Qatar': [4, 1], 'Mexico|South Korea': [2, 1],
+  'United States|Australia': [3, 1], 'Scotland|Morocco': [0, 2],
+  'Brazil|Haiti': [4, 0], 'Turkey|Paraguay': [2, 1],
+  'Netherlands|Sweden': [1, 1], 'Germany|Ivory Coast': [1, 1],
+  'Ecuador|Curaçao': [3, 0], 'Tunisia|Japan': [0, 2],
+  'Belgium|Iran': [2, 0], 'Spain|Saudi Arabia': [2, 0],
+  'Uruguay|Cape Verde': [3, 0], 'New Zealand|Egypt': [0, 0],
+  'Argentina|Austria': [2, 1], 'France|Iraq': [4, 0],
+  'Norway|Senegal': [1, 2], 'Jordan|Algeria': [0, 2],
+  'Portugal|Uzbekistan': [3, 0], 'England|Ghana': [2, 0],
+  'Panama|Croatia': [0, 2], 'Colombia|DR Congo': [2, 1],
+  'Switzerland|Canada': [1, 0], 'Bosnia and Herzegovina|Qatar': [2, 1],
+  'Scotland|Brazil': [0, 3], 'Morocco|Haiti': [2, 0],
+  'Czech Republic|Mexico': [0, 1], 'South Africa|South Korea': [1, 2],
+  'Curaçao|Ivory Coast': [0, 3], 'Ecuador|Germany': [0, 2],
+  'Japan|Sweden': [1, 0], 'Tunisia|Netherlands': [0, 2],
+  'Turkey|United States': [1, 1], 'Paraguay|Australia': [0, 0],
+  'Norway|France': [1, 1], 'Senegal|Iraq': [3, 0],
+  'Uruguay|Spain': [1, 2], 'Cape Verde|Saudi Arabia': [2, 1],
+  'Egypt|Iran': [0, 1], 'New Zealand|Belgium': [0, 2],
+  'Panama|England': [0, 3], 'Croatia|Ghana': [1, 0],
+  'Colombia|Portugal': [1, 1], 'DR Congo|Uzbekistan': [2, 0],
+  'Algeria|Austria': [1, 1], 'Jordan|Argentina': [0, 1],
 }
 
-const PREVIEW_KNOCKOUT_MATCHES: Omit<MatchRecord, 'group'>[] = [
-  { homeTeam: 'Brazil', awayTeam: 'Japan', score: { home: 2, away: 0 }, status: 'finished', date: new Date('2026-07-01'), stage: 'round-of-16', venue: 'SoFi Stadium', city: 'Los Angeles', matchday: 0, stats: { possession: { home: 58, away: 42 }, shots: { home: 15, away: 6 }, xG: { home: 2.1, away: 0.5 } } },
-  { homeTeam: 'France', awayTeam: 'Colombia', score: { home: 3, away: 1 }, status: 'finished', date: new Date('2026-07-02'), stage: 'round-of-16', venue: 'Hard Rock Stadium', city: 'Miami', matchday: 0, stats: { possession: { home: 55, away: 45 }, shots: { home: 14, away: 10 }, xG: { home: 2.4, away: 1.1 } } },
-  { homeTeam: 'Argentina', awayTeam: 'Netherlands', score: { home: 2, away: 2 }, status: 'finished', date: new Date('2026-07-03'), stage: 'round-of-16', venue: 'AT&T Stadium', city: 'Dallas', matchday: 0, stats: { possession: { home: 48, away: 52 }, shots: { home: 11, away: 13 }, xG: { home: 1.8, away: 2.0 } } },
-  { homeTeam: 'Brazil', awayTeam: 'France', score: { home: 2, away: 1 }, status: 'finished', date: new Date('2026-07-09'), stage: 'quarter', venue: 'Estadio Azteca', city: 'Mexico City', matchday: 0, stats: { possession: { home: 52, away: 48 }, shots: { home: 13, away: 11 }, xG: { home: 1.9, away: 1.3 } } },
-]
+function previewScoreKey(home: string, away: string): string {
+  return `${home}|${away}`
+}
 
 function buildPreviewStandings(): TeamRecord[] {
   const stats = new Map<string, TeamRecord>()
-  const squads = buildFullSquads(GROUPS_2026, true)
 
   for (const [group, teams] of Object.entries(GROUPS_2026)) {
     for (const name of teams) {
@@ -351,69 +278,55 @@ function buildPreviewStandings(): TeamRecord[] {
         possession: 50, form: [],
         shotsOnTarget: 0, cleanSheets: 0,
         coach: COACHES[name] ?? 'TBD',
-        keyPlayer: keyPlayerForTeam(name, squads),
+        keyPlayer: 'TBD',
       })
     }
   }
 
-  for (const results of Object.values(PREVIEW_GROUP_RESULTS)) {
-    results.forEach(([home, away, hg, ag]) => {
-      const h = stats.get(home)!
-      const a = stats.get(away)!
-      h.played++; a.played++
-      h.goalsFor += hg; h.goalsAgainst += ag
-      a.goalsFor += ag; a.goalsAgainst += hg
-      if (hg > ag) {
-        h.wins++; h.points += 3; a.losses++
-        h.form.push('W'); a.form.push('L')
-      } else if (hg < ag) {
-        a.wins++; a.points += 3; h.losses++
-        h.form.push('L'); a.form.push('W')
-      } else {
-        h.draws++; a.draws++; h.points++; a.points++
-        h.form.push('D'); a.form.push('D')
-      }
-    })
+  for (const f of OFFICIAL_GROUP_FIXTURES) {
+    const score = PREVIEW_SCORES[previewScoreKey(f.homeTeam, f.awayTeam)] ?? [1, 1]
+    const [hg, ag] = score
+    const h = stats.get(f.homeTeam)!
+    const a = stats.get(f.awayTeam)!
+    h.played++; a.played++
+    h.goalsFor += hg; h.goalsAgainst += ag
+    a.goalsFor += ag; a.goalsAgainst += hg
+    if (hg > ag) {
+      h.wins++; h.points += 3; a.losses++
+      h.form.push('W'); a.form.push('L')
+    } else if (hg < ag) {
+      a.wins++; a.points += 3; h.losses++
+      h.form.push('L'); a.form.push('W')
+    } else {
+      h.draws++; a.draws++; h.points++; a.points++
+      h.form.push('D'); a.form.push('D')
+    }
   }
 
   return Array.from(stats.values()).sort((a, b) => a.group.localeCompare(b.group) || b.points - a.points)
 }
 
 function buildPreviewMatches(): MatchRecord[] {
-  const matches: MatchRecord[] = []
-  const baseDate = new Date('2026-06-11T18:00:00Z')
-  let dayOffset = 0
-
-  for (const [group, results] of Object.entries(PREVIEW_GROUP_RESULTS)) {
-    results.forEach(([home, away, hg, ag], idx) => {
-      const matchday = Math.floor(idx / 2) + 1
-      const venue = VENUES[(dayOffset + idx) % VENUES.length]
-      matches.push({
-        homeTeam: home,
-        awayTeam: away,
-        score: { home: hg, away: ag },
-        status: 'finished',
-        date: new Date(baseDate.getTime() + (dayOffset + idx) * 86400000 * 0.5),
-        stage: 'group',
-        group,
-        matchday,
-        venue: venue.venue,
-        city: venue.city,
-        stats: {
-          possession: { home: 52, away: 48 },
-          shots: { home: hg * 4 + 6, away: ag * 4 + 5 },
-          xG: { home: hg * 0.7 + 0.5, away: ag * 0.7 + 0.4 },
-        },
-      })
+  const groupMatches = OFFICIAL_GROUP_FIXTURES.map((f, idx) => {
+    const [hg, ag] = PREVIEW_SCORES[previewScoreKey(f.homeTeam, f.awayTeam)] ?? [1, 1]
+    return groupFixtureToMatch(f, idx + 1, {
+      score: { home: hg, away: ag },
+      status: 'finished',
+      stats: {
+        possession: { home: 52, away: 48 },
+        shots: { home: hg * 4 + 6, away: ag * 4 + 5 },
+        xG: { home: hg * 0.7 + 0.5, away: ag * 0.7 + 0.4 },
+      },
     })
-    dayOffset += 2
-  }
+  })
 
-  for (const km of PREVIEW_KNOCKOUT_MATCHES) {
-    matches.push({ ...km, group: null })
-  }
+  const knockoutMatches = OFFICIAL_KNOCKOUT_FIXTURES.map((f) =>
+    knockoutFixtureToMatch(f)
+  )
 
-  return matches.sort((a, b) => a.date.getTime() - b.date.getTime())
+  return [...groupMatches, ...knockoutMatches].sort(
+    (a, b) => a.date.getTime() - b.date.getTime()
+  )
 }
 
 function buildPreviewPlayers(): PlayerRecord[] {
@@ -452,15 +365,32 @@ export function getSeedDataset() {
       hosts: ['United States', 'Mexico', 'Canada'],
       teams: 48,
       groups: 12,
-      format: '12 groups of 4 → Round of 32',
+      format: '12 groups of 4 → Round of 32 → Final (104 matches)',
+      totalMatches: FIFA_TOTAL_MATCHES,
+      squadSize: FIFA_SQUAD_SIZE,
+      totalPlayers: getTotalPlayerCount(),
       startDate: '2026-06-11',
       endDate: '2026-07-19',
+      officialDrawDate: '2025-12-05',
       currentStage: preview ? 'preview-mockup' : 'live',
       dataMode: getTournamentDataMode(),
       venues: VENUES.length,
+      dataSources: {
+        groups: 'official',
+        fixtures: 'official',
+        knockoutBracket: 'official',
+        venues: 'official',
+        kickoffTimes: 'official',
+        squads: 'pending-official',
+        headToHead: 'verified-historical',
+        worldCupHistory: 'verified-historical',
+        previewScores: preview ? 'mockup' : 'synced-live',
+        knockoutResults: preview ? 'scheduled' : 'synced-live',
+        liveResults: preview ? 'pending-kickoff' : 'synced-live',
+      },
       dataNote: preview
-        ? 'Illustrative preview mockup — clearly labeled until kickoff; replaced by synced results after 11 Jun 2026'
-        : 'Live tournament data — updated via npm run sync / admin agent',
+        ? 'Official FIFA schedule: 104 matches. Tournament squads pending FIFA publication. Group-stage scores are illustrative mockup; knockouts scheduled with bracket placeholders.'
+        : 'Official 104-match schedule with live results synced via npm run sync / admin agent. Tournament squads pending FIFA publication.',
     },
   }
 }

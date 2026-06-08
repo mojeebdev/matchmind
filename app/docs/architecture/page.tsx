@@ -110,9 +110,14 @@ export default function ArchitecturePage() {
 
           <h2 style={h2}>Tournament Data Phases</h2>
           <p>
-            Before <strong style={gold}>11 June 2026</strong>, MatchMind seeds and serves{' '}
-            <strong style={gold}>preview mockup</strong> data — illustrative sample scores for demo UX,
-            with an amber banner on <code style={gold}>/agent</code> and disclosure in every response.
+            <strong style={gold}>Official (FIFA):</strong> groups, 72 fixtures, venues, and kickoff times from the
+            Dec 5 2025 draw and published schedule (<code style={gold}>lib/worldcup2026-official-fixtures.ts</code>).
+          </p>
+          <p>
+            Before <strong style={gold}>11 June 2026</strong>, MatchMind also serves{' '}
+            <strong style={gold}>preview mockup</strong> scores, standings, and player stats — illustrative demo
+            data with an amber banner on <code style={gold}>/agent</code>. See{' '}
+            <code style={gold}>docs/DATA-SOURCES.md</code> for the full real vs mockup matrix.
             After kickoff, <code style={gold}>npm run sync</code> or the admin agent updates MongoDB;
             badges switch to live mode automatically (<code style={gold}>lib/tournament-phase.ts</code>).
           </p>
@@ -127,8 +132,8 @@ export default function ArchitecturePage() {
             <li><code style={gold}>npm run sync</code> — local private pipeline (gitignored)</li>
           </ul>
           <p>
-            Powered by live MongoDB sync after tournament kickoff. Independent of any official
-            broadcast data feed. Preview mockup before kickoff; live synced results after.
+            Official fixture structure always; mockup scores before kickoff; live synced results after.
+            Independent of any official broadcast data feed.
           </p>
 
           <h2 style={h2}>Security</h2>

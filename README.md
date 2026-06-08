@@ -22,15 +22,15 @@ Ask it anything:
 
 It classifies intent, queries the MongoDB football intelligence database via MCP, and returns structured analyst-grade responses with key stats, confidence signals, and follow-up suggestions.
 
-> **Data note:** Powered by live MongoDB sync after tournament kickoff. Independent of any official broadcast data feed. Before kickoff (**11 June 2026**), the agent shows **◇ Preview mockup** data — illustrative sample scores, clearly labeled in the UI. After kickoff, responses switch to **● Live MongoDB** as real results are synced.
+> **Data note:** **Groups, fixtures, venues, and kickoff times** match the official FIFA World Cup 2026 draw (5 Dec 2025) and published schedule. **Scores, standings, and player tournament stats** before kickoff are **◇ Preview mockup** — illustrative demo data, clearly labeled. After kickoff (**11 June 2026**), real results sync via **● Live MongoDB**. See [docs/DATA-SOURCES.md](docs/DATA-SOURCES.md) for the full real vs mockup breakdown.
 
 ### Data modes
 
-| Mode | When | Badge | What's in MongoDB |
-|---|---|---|---|
-| **Preview mockup** | Before 11 Jun 2026 | ◇ Preview mockup (amber) | Illustrative demo scores, scorers, standings — for UX only |
-| **Live** | On/after kickoff | ● Live MongoDB (green) | Real results via `npm run sync` or admin agent |
-| **Demo** | MongoDB not configured | ○ Demo data | In-memory fallback |
+| Mode | When | Badge | What's official | What's mockup |
+|---|---|---|---|---|
+| **Preview mockup** | Before 11 Jun 2026 | ◇ Preview mockup (amber) | Groups, **104 fixtures**, venues, kickoff times, H2H history | Group-stage scores & standings only; squads pending FIFA |
+| **Live** | On/after kickoff | ● Live MongoDB (green) | Fixtures + synced real results | — |
+| **Demo** | MongoDB not configured | ○ Demo data | Same official fixture structure | In-memory fallback scores |
 
 Automatic switch is date-based (`lib/tournament-phase.ts`). Override for testing:
 
