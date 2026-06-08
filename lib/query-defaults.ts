@@ -12,20 +12,30 @@ export function getDefaultQueryForType(
 
   switch (questionType) {
     case 'stats': {
+      const groupMatch = q.match(/group\s+([a-l])/i)
+      if (groupMatch) {
+        const group = groupMatch[1].toUpperCase()
+        if (q.includes('scorer') || q.includes('goal') || q.includes('top')) {
+          return {
+            collection: 'players',
+            pipeline: [
+              { $match: { group } },
+              { $sort: { goals: -1 } },
+              { $limit: 10 },
+            ],
+          }
+        }
+        return {
+          collection: 'teams',
+          pipeline: [{ $match: { group } }, { $sort: { wins: -1 } }],
+        }
+      }
       const historical = matchHistoricalQuery(question)
       if (historical) return historical
       if (q.includes('scorer') || q.includes('goal')) {
         return {
           collection: 'players',
           pipeline: [{ $sort: { goals: -1 } }, { $limit: 10 }],
-        }
-      }
-      if (q.includes('group')) {
-        const groupMatch = q.match(/group\s+([a-l])/i)
-        const group = groupMatch ? groupMatch[1].toUpperCase() : 'A'
-        return {
-          collection: 'teams',
-          pipeline: [{ $match: { group } }, { $sort: { wins: -1 } }],
         }
       }
       return {

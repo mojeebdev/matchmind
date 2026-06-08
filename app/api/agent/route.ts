@@ -66,6 +66,7 @@ export async function POST(request: NextRequest) {
       ...(typeof response.preview_data === 'boolean'
         ? { preview_data: response.preview_data }
         : {}),
+      ...(response.agent_trace ? { agent_trace: response.agent_trace } : {}),
     }
 
     if (session?.user?.id) {

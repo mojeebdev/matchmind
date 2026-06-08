@@ -14,6 +14,24 @@ export interface KeyStat {
   context: string
 }
 
+export interface AgentTraceStep {
+  step: string
+  detail: string
+  status: 'complete' | 'error' | 'skipped'
+}
+
+export interface AgentTrace {
+  pipeline: 'adk' | 'local'
+  steps: AgentTraceStep[]
+  mongo?: {
+    configured: boolean
+    queried: boolean
+    collection?: string
+    record_count?: number
+    source?: 'mcp' | 'direct-driver' | 'demo'
+  }
+}
+
 export interface AgentResponse {
   question_type: QuestionType
   headline: string
@@ -26,6 +44,8 @@ export interface AgentResponse {
   live_data?: boolean
   /** true = illustrative preview mockup before World Cup kickoff */
   preview_data?: boolean
+  /** Visible reasoning trace for demos and judges */
+  agent_trace?: AgentTrace
 }
 
 export interface MongoQueryPlan {

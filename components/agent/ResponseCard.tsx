@@ -159,6 +159,68 @@ export function ResponseCard({ response }: ResponseCardProps) {
         </div>
       )}
 
+      {response.agent_trace && response.agent_trace.steps.length > 0 && (
+        <div style={{ marginBottom: '32px' }}>
+          <span
+            style={{
+              fontFamily: 'var(--font-body)',
+              fontSize: '10px',
+              letterSpacing: '0.14em',
+              textTransform: 'uppercase',
+              color: 'var(--ink-muted)',
+              display: 'block',
+              marginBottom: '16px',
+            }}
+          >
+            Agent Reasoning ({response.agent_trace.pipeline})
+          </span>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {response.agent_trace.steps.map((step, i) => (
+              <div
+                key={`${step.step}-${i}`}
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'minmax(120px, 160px) 1fr',
+                  gap: '12px',
+                  alignItems: 'start',
+                  padding: '12px 14px',
+                  background: 'var(--void-03)',
+                  border: '1px solid var(--void-border)',
+                  borderRadius: '8px',
+                }}
+              >
+                <span
+                  style={{
+                    fontFamily: 'var(--font-body)',
+                    fontSize: '11px',
+                    letterSpacing: '0.06em',
+                    textTransform: 'uppercase',
+                    color:
+                      step.status === 'error'
+                        ? '#f87171'
+                        : step.status === 'skipped'
+                          ? 'var(--ink-muted)'
+                          : 'var(--gold)',
+                  }}
+                >
+                  {step.step}
+                </span>
+                <span
+                  style={{
+                    fontFamily: 'var(--font-body)',
+                    fontSize: '12px',
+                    color: 'var(--ink-secondary)',
+                    lineHeight: 1.6,
+                  }}
+                >
+                  {step.detail}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div
         style={{
           borderTop: '1px solid var(--void-border)',

@@ -6,7 +6,13 @@ import {
 import type { AgentResponse } from './types'
 
 function withPreviewDisclaimer(answer: string): string {
-  if (answer.includes('illustrative preview mockup')) return answer
+  if (
+    answer.includes('illustrative preview mockup') ||
+    answer.includes('Scores, standings, player tournament stats') ||
+    answer.includes('Groups, fixtures, venues, and kickoff times match the official FIFA')
+  ) {
+    return answer
+  }
   return `${PREVIEW_DISCLOSURE}\n\n${answer}`
 }
 

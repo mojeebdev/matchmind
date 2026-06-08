@@ -611,7 +611,10 @@ export function matchHistoricalQuery(question: string): MongoQueryPlan | null {
     }
   }
 
-  if (/group\s+([a-l])/i.test(q) && /history|track record|past world cup|scored|scorer/.test(q)) {
+  if (
+    /group\s+([a-l])/i.test(q) &&
+    /history|track record|past world cup|career|historically|all.time|legacy|ever scored/.test(q)
+  ) {
     const groupMatch = q.match(/group\s+([a-l])/i)
     const group = groupMatch ? groupMatch[1].toUpperCase() : null
     if (group) {

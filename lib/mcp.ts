@@ -56,6 +56,58 @@ export type McpQueryResult = {
  * Execute a football data query through the MCP tool interface.
  * Falls back to direct MongoDB driver when MCP server is not configured.
  */
+async function callMcpServerHttp(
+  plan: MongoQueryPlan
+): Promise<Record<string, unknown>[]> {
+  const baseUrl = process.env.MCP_SERVER_URL?.trim()
+  if (!baseUrl) {
+    throw new Error('MCP_SERVER_URL is not configured')
+  }
+
+  const endpoint = baseUrl.endsWith('/tools/call')
+    ? baseUrl
+    : `${baseUrl.replace(/\/$/, '')}/tools/call`
+
+  const response = await fetch(endpoint, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(process.env.MCP_SERVER_TOKEN
+        ? { Authorization: `Bearer ${process.env.MCP_SERVER_TOKEN}` }
+        : {}),
+    },
+    body: JSON.stringify({
+      name: 'query_football_data',
+      arguments: {
+        collection: plan.collection,
+        pipeline: plan.pipeline,
+      },
+    }),
+    signal: AbortSignal.timeout(20_000),
+  })
+
+  if (!response.ok) {
+    throw new Error(`MCP server HTTP ${response.status}`)
+  }
+
+  const payload = (await response.json()) as {
+    records?: Record<string, unknown>[]
+    result?: { records?: Record<string, unknown>[] }
+    content?: Array<{ text?: string }>
+  }
+
+  if (Array.isArray(payload.records)) return payload.records
+  if (Array.isArray(payload.result?.records)) return payload.result.records
+
+  const text = payload.content?.[0]?.text
+  if (text) {
+    const parsed = JSON.parse(text) as { records?: Record<string, unknown>[] }
+    if (Array.isArray(parsed.records)) return parsed.records
+  }
+
+  throw new Error('MCP server returned an unexpected payload shape')
+}
+
 export async function mcpQueryFootballData(
   plan: MongoQueryPlan
 ): Promise<McpQueryResult> {
@@ -63,13 +115,25 @@ export async function mcpQueryFootballData(
     throw new Error('MongoDB is not configured')
   }
 
-  // MCP server HTTP transport would be wired here when MCP_SERVER_URL is set.
-  // For now, the direct driver implements the same tool contract locally.
+  if (isMcpServerConfigured()) {
+    try {
+      const records = await callMcpServerHttp(plan)
+      return {
+        records,
+        source: 'mcp',
+        tool: 'query_football_data',
+        collection: plan.collection,
+      }
+    } catch (error) {
+      console.warn('[MatchMind] MCP server call failed — falling back to direct driver:', error)
+    }
+  }
+
   const records = await queryCollection(plan.collection, plan.pipeline)
 
   return {
     records: records as Record<string, unknown>[],
-    source: process.env.MCP_SERVER_URL ? 'mcp' : 'direct-driver',
+    source: 'direct-driver',
     tool: 'query_football_data',
     collection: plan.collection,
   }

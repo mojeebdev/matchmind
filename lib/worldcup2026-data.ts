@@ -421,6 +421,7 @@ function toMockPlayers(players: PlayerRecord[]) {
   return players.map((p) => ({
     name: p.name,
     team: p.team,
+    group: p.group,
     position: p.position,
     goals: p.goals,
     assists: p.assists,

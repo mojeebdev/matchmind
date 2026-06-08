@@ -119,9 +119,13 @@ export function generateResponseFromMongoData(
   question: string,
   questionType: QuestionType,
   mongoData: Record<string, unknown>,
-  options: { isLiveData?: boolean; dataSource?: string } = {}
+  options: { isLiveData?: boolean; dataSource?: string; fromMongo?: boolean } = {}
 ): AgentResponse {
-  const { isLiveData = true, dataSource = 'MongoDB Atlas' } = options
+  const {
+    isLiveData = true,
+    dataSource = 'MongoDB Atlas',
+    fromMongo = true,
+  } = options
 
   if (!hasLiveRecords(mongoData)) {
     return {
@@ -149,9 +153,11 @@ export function generateResponseFromMongoData(
   }
 
   const { key, records } = firstCollectionData(mongoData)
-  const sourceLabel = isLiveData
-    ? `${dataSource} (${key} collection via MCP tool)`
-    : 'Demo dataset'
+  const sourceLabel = !fromMongo
+    ? 'In-memory demo fallback'
+    : isLiveData
+      ? `${dataSource} (${key} collection via MCP tool)`
+      : `${dataSource} — preview mockup (${key} collection)`
 
   if (key === 'players' || records[0]?.goals !== undefined) {
     const players = records as LegacyPlayerRecord[]

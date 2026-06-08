@@ -8,7 +8,8 @@ import { sanitizeQueryPlan } from './query-safety'
 import { getDefaultQueryForType } from './query-defaults'
 import { validateAgentResponse } from './validation'
 import { formatUserContextBlock, type AgentUserContext } from './user-context'
-import type { AgentResponse, MongoQueryPlan, QuestionType } from './types'
+import type { AgentResponse, AgentTrace, MongoQueryPlan, QuestionType } from './types'
+import { getRecordCount } from './data-response'
 
 const VALID_TYPES: QuestionType[] = [
   'stats',
@@ -105,11 +106,19 @@ User question: ${question}`
 async function fetchFootballData(
   questionType: QuestionType,
   question: string
-): Promise<{ mongoData: Record<string, unknown>; isLiveData: boolean }> {
+): Promise<{
+  mongoData: Record<string, unknown>
+  isLiveData: boolean
+  fromMongo: boolean
+  queryPlan?: MongoQueryPlan
+  mcpSource?: 'mcp' | 'direct-driver' | 'demo'
+}> {
   if (!isMongoConfigured()) {
     return {
       mongoData: getMockDataForType(questionType, question),
       isLiveData: false,
+      fromMongo: false,
+      mcpSource: 'demo',
     }
   }
 
@@ -119,6 +128,50 @@ async function fetchFootballData(
   return {
     mongoData: { [mcpResult.collection]: mcpResult.records },
     isLiveData: !isPreviewMode(),
+    fromMongo: true,
+    queryPlan,
+    mcpSource: mcpResult.source,
+  }
+}
+
+function buildLocalAgentTrace(
+  questionType: QuestionType,
+  fetched: {
+    fromMongo: boolean
+    queryPlan?: MongoQueryPlan
+    mcpSource?: 'mcp' | 'direct-driver' | 'demo'
+    mongoData: Record<string, unknown>
+  }
+): AgentTrace {
+  const recordCount = getRecordCount(fetched.mongoData)
+  return {
+    pipeline: 'local',
+    steps: [
+      {
+        step: 'Classify intent',
+        detail: `Question type: ${questionType}`,
+        status: 'complete',
+      },
+      {
+        step: 'Query MongoDB',
+        detail: fetched.fromMongo
+          ? `${fetched.queryPlan?.collection ?? 'unknown'} · ${recordCount} record(s) via ${fetched.mcpSource ?? 'direct-driver'}`
+          : 'MongoDB not configured — in-memory demo fallback',
+        status: fetched.fromMongo ? 'complete' : 'skipped',
+      },
+      {
+        step: 'Analyze data',
+        detail: 'Gemini or deterministic MongoDB template',
+        status: 'complete',
+      },
+    ],
+    mongo: {
+      configured: isMongoConfigured(),
+      queried: fetched.fromMongo,
+      collection: fetched.queryPlan?.collection,
+      record_count: recordCount,
+      source: fetched.mcpSource,
+    },
   }
 }
 
@@ -149,7 +202,8 @@ export async function analyzeFootballQuestion(
   questionType: QuestionType,
   mongoData: Record<string, unknown>,
   isLiveData: boolean,
-  userContext?: AgentUserContext
+  userContext?: AgentUserContext,
+  fromMongo = true
 ): Promise<AgentResponse> {
   if (!isGeminiConfigured()) {
     if (isMongoDataEmpty(mongoData)) {
@@ -158,6 +212,7 @@ export async function analyzeFootballQuestion(
           ...generateResponseFromMongoData(question, questionType, mongoData, {
             isLiveData: true,
             dataSource: 'MongoDB Atlas',
+            fromMongo,
           }),
           live_data: true,
         }
@@ -167,7 +222,8 @@ export async function analyzeFootballQuestion(
     return {
       ...generateResponseFromMongoData(question, questionType, mongoData, {
         isLiveData,
-        dataSource: isLiveData ? 'MongoDB Atlas' : 'Demo dataset',
+        dataSource: 'MongoDB Atlas',
+        fromMongo,
       }),
       live_data: isLiveData,
     }
@@ -213,7 +269,10 @@ Analyze this data and answer the question as a senior football analyst. When fan
     console.warn('[MatchMind] Gemini response failed validation — using fallback')
     if (!isMongoDataEmpty(mongoData)) {
       return {
-        ...generateResponseFromMongoData(question, questionType, mongoData, { isLiveData }),
+        ...generateResponseFromMongoData(question, questionType, mongoData, {
+          isLiveData,
+          fromMongo,
+        }),
         live_data: isLiveData,
       }
     }
@@ -222,6 +281,7 @@ Analyze this data and answer the question as a senior football analyst. When fan
         ...generateResponseFromMongoData(question, questionType, mongoData, {
           isLiveData: true,
           dataSource: 'MongoDB Atlas',
+          fromMongo,
         }),
         live_data: true,
       }
@@ -230,7 +290,10 @@ Analyze this data and answer the question as a senior football analyst. When fan
   } catch {
     if (!isMongoDataEmpty(mongoData)) {
       return {
-        ...generateResponseFromMongoData(question, questionType, mongoData, { isLiveData }),
+        ...generateResponseFromMongoData(question, questionType, mongoData, {
+          isLiveData,
+          fromMongo,
+        }),
         live_data: isLiveData,
       }
     }
@@ -239,6 +302,7 @@ Analyze this data and answer the question as a senior football analyst. When fan
         ...generateResponseFromMongoData(question, questionType, mongoData, {
           isLiveData: true,
           dataSource: 'MongoDB Atlas',
+          fromMongo,
         }),
         live_data: true,
       }
@@ -255,22 +319,42 @@ export async function processAgentQuestion(
 
   let mongoData: Record<string, unknown>
   let isLiveData: boolean
+  let fromMongo: boolean
+  let fetchedMeta: Awaited<ReturnType<typeof fetchFootballData>>
 
   try {
-    const fetched = await fetchFootballData(questionType, question)
-    mongoData = fetched.mongoData
-    isLiveData = fetched.isLiveData
+    fetchedMeta = await fetchFootballData(questionType, question)
+    mongoData = fetchedMeta.mongoData
+    isLiveData = fetchedMeta.isLiveData
+    fromMongo = fetchedMeta.fromMongo
   } catch (error) {
     console.warn('[MatchMind] MongoDB/MCP query failed:', error)
-    return buildDatabaseErrorResponse(question, questionType, error)
+    return {
+      ...buildDatabaseErrorResponse(question, questionType, error),
+      agent_trace: {
+        pipeline: 'local',
+        steps: [
+          { step: 'Classify intent', detail: `Question type: ${questionType}`, status: 'complete' },
+          {
+            step: 'Query MongoDB',
+            detail: error instanceof Error ? error.message : 'Query failed',
+            status: 'error',
+          },
+        ],
+        mongo: { configured: isMongoConfigured(), queried: false },
+      },
+    }
   }
+
+  const trace = buildLocalAgentTrace(questionType, fetchedMeta)
 
   const response = await analyzeFootballQuestion(
     question,
     questionType,
     mongoData,
     isLiveData,
-    userContext
+    userContext,
+    fromMongo
   )
 
   const validated = validateAgentResponse(response, questionType)
@@ -278,6 +362,7 @@ export async function processAgentQuestion(
     return {
       ...validated,
       live_data: isLiveData && !isPreviewMode(),
+      agent_trace: trace,
     }
   }
 
@@ -286,10 +371,15 @@ export async function processAgentQuestion(
       ...generateResponseFromMongoData(question, questionType, mongoData, {
         isLiveData: !isPreviewMode(),
         dataSource: 'MongoDB Atlas',
+        fromMongo,
       }),
       live_data: !isPreviewMode(),
+      agent_trace: trace,
     }
   }
 
-  return getMockResponse(questionType, question)
+  return {
+    ...getMockResponse(questionType, question),
+    agent_trace: trace,
+  }
 }

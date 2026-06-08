@@ -13,16 +13,25 @@ export function getMockDataForType(questionType: QuestionType, question: string)
   const q = question.toLowerCase()
 
   switch (questionType) {
-    case 'stats':
+    case 'stats': {
+      const groupMatch = q.match(/group\s+([a-l])/i)
+      if (groupMatch) {
+        const group = groupMatch[1].toUpperCase()
+        if (q.includes('scorer') || q.includes('goal') || q.includes('top')) {
+          return {
+            players: [...MOCK_PLAYERS]
+              .filter((p) => p.group === group)
+              .sort((a, b) => b.goals - a.goals)
+              .slice(0, 10),
+          }
+        }
+        return { teams: MOCK_TEAMS.filter((t) => t.group === group) }
+      }
       if (q.includes('scorer') || q.includes('goal')) {
         return { players: [...MOCK_PLAYERS].sort((a, b) => b.goals - a.goals).slice(0, 10) }
       }
-      if (q.includes('group')) {
-        const groupMatch = q.match(/group\s+([a-l])/i)
-        const group = groupMatch ? groupMatch[1].toUpperCase() : 'I'
-        return { teams: MOCK_TEAMS.filter((t) => t.group === group) }
-      }
       return { players: MOCK_PLAYERS.slice(0, 12), teams: MOCK_TEAMS.slice(0, 12) }
+    }
     case 'prediction':
       return {
         matches: MOCK_MATCHES.filter((m) =>
@@ -73,6 +82,23 @@ export function getMockResponse(questionType: QuestionType, question: string): A
 
   const topScorer = [...MOCK_PLAYERS].sort((a, b) => b.goals - a.goals)[0]
   const groupLeader = MOCK_TEAMS.find((t) => t.group === 'I')
+
+  if (!topScorer) {
+    return {
+      question_type: questionType,
+      headline: 'Preview Mockup Dataset Ready',
+      answer: `MatchMind is in preview mockup mode before the World Cup kicks off on 11 June 2026. The in-memory demo dataset has no player records loaded yet — run \`npm run seed\` with MongoDB configured for the full dataset.\n\nQuestion received: "${question}".`,
+      key_stats: [
+        { label: 'Mode', value: 'Preview mockup', context: 'Before kickoff' },
+        { label: 'Teams', value: '48', context: '12 groups · seed required' },
+      ],
+      confidence: 'low',
+      follow_up: 'Which teams are in Group A?',
+      data_sources: ['In-memory demo fallback'],
+      live_data: false,
+      preview_data: true,
+    }
+  }
 
   return {
     question_type: questionType,

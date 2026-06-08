@@ -17,7 +17,7 @@ import { isMongoConfigured } from './mongodb'
 import { validateAgentResponse } from './validation'
 import type { AgentUserContext } from './user-context'
 import { formatUserContextBlock } from './user-context'
-import type { AgentResponse } from './types'
+import type { AgentResponse, AgentTrace } from './types'
 import { isPreviewMode } from './tournament-phase'
 
 type AdkEvent = {
@@ -133,10 +133,40 @@ async function runAdkAgent(question: string, userContext?: AgentUserContext): Pr
         dataSources.unshift('MongoDB Atlas')
       }
 
+      const trace: AgentTrace = {
+        pipeline: 'adk',
+        steps: [
+          {
+            step: 'Classify intent',
+            detail: `ADK agent · type: ${validated.question_type}`,
+            status: 'complete',
+          },
+          {
+            step: 'Query MongoDB',
+            detail: meta.queriedMongo
+              ? `${meta.mongoRecordCount} record(s) via query_football_data`
+              : 'Tool not invoked — local fallback used',
+            status: meta.queriedMongo ? 'complete' : 'skipped',
+          },
+          {
+            step: 'Analyze data',
+            detail: 'ADK LlmAgent structured JSON response',
+            status: 'complete',
+          },
+        ],
+        mongo: {
+          configured: isMongoConfigured(),
+          queried: meta.queriedMongo,
+          record_count: meta.mongoRecordCount,
+          source: meta.queriedMongo ? (process.env.MCP_SERVER_URL ? 'mcp' : 'direct-driver') : 'demo',
+        },
+      }
+
       return {
         ...validated,
         data_sources: dataSources,
         live_data: liveData,
+        agent_trace: trace,
       }
     }
   } catch {
