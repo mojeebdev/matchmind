@@ -6,6 +6,10 @@
  */
 
 import { getTournamentDataMode, isPreviewMode } from './tournament-phase'
+import { buildFullSquads } from './squad-builder'
+import type { PlayerRecord } from './player-types'
+
+export type { PlayerRecord, ClubMatch, WorldCupHistorySummary } from './player-types'
 
 export type TeamRecord = {
   name: string
@@ -25,20 +29,6 @@ export type TeamRecord = {
   cleanSheets: number
   coach: string
   keyPlayer: string
-}
-
-export type PlayerRecord = {
-  name: string
-  team: string
-  group: string
-  position: 'GK' | 'DF' | 'MF' | 'FW'
-  goals: number
-  assists: number
-  xG: number
-  minutes: number
-  passAccuracy: number
-  age: number
-  club: string
 }
 
 export type MatchRecord = {
@@ -120,57 +110,6 @@ const VENUES = [
   { venue: 'BC Place', city: 'Vancouver' },
   { venue: 'BMO Field', city: 'Toronto' },
   { venue: 'Lincoln Financial Field', city: 'Philadelphia' },
-]
-
-const SQUAD_PLAYERS: Omit<PlayerRecord, 'group'>[] = [
-  { name: 'Lionel Messi', team: 'Argentina', position: 'FW', goals: 0, assists: 0, xG: 0, minutes: 0, passAccuracy: 87, age: 38, club: 'Inter Miami' },
-  { name: 'Lautaro Martínez', team: 'Argentina', position: 'FW', goals: 0, assists: 0, xG: 0, minutes: 0, passAccuracy: 74, age: 28, club: 'Inter Milan' },
-  { name: 'Emiliano Martínez', team: 'Argentina', position: 'GK', goals: 0, assists: 0, xG: 0, minutes: 0, passAccuracy: 81, age: 32, club: 'Aston Villa' },
-  { name: 'Rodrigo De Paul', team: 'Argentina', position: 'MF', goals: 0, assists: 0, xG: 0, minutes: 0, passAccuracy: 89, age: 30, club: 'Atlético Madrid' },
-  { name: 'Vinícius Jr.', team: 'Brazil', position: 'FW', goals: 0, assists: 0, xG: 0, minutes: 0, passAccuracy: 80, age: 25, club: 'Real Madrid' },
-  { name: 'Rodrygo', team: 'Brazil', position: 'FW', goals: 0, assists: 0, xG: 0, minutes: 0, passAccuracy: 82, age: 24, club: 'Real Madrid' },
-  { name: 'Raphinha', team: 'Brazil', position: 'FW', goals: 0, assists: 0, xG: 0, minutes: 0, passAccuracy: 79, age: 28, club: 'Barcelona' },
-  { name: 'Alisson', team: 'Brazil', position: 'GK', goals: 0, assists: 0, xG: 0, minutes: 0, passAccuracy: 85, age: 32, club: 'Liverpool' },
-  { name: 'Kylian Mbappé', team: 'France', position: 'FW', goals: 0, assists: 0, xG: 0, minutes: 0, passAccuracy: 81, age: 27, club: 'Real Madrid' },
-  { name: 'Antoine Griezmann', team: 'France', position: 'MF', goals: 0, assists: 0, xG: 0, minutes: 0, passAccuracy: 88, age: 34, club: 'Atlético Madrid' },
-  { name: 'Ousmane Dembélé', team: 'France', position: 'FW', goals: 0, assists: 0, xG: 0, minutes: 0, passAccuracy: 76, age: 27, club: 'PSG' },
-  { name: 'William Saliba', team: 'France', position: 'DF', goals: 0, assists: 0, xG: 0, minutes: 0, passAccuracy: 91, age: 24, club: 'Arsenal' },
-  { name: 'Harry Kane', team: 'England', position: 'FW', goals: 0, assists: 0, xG: 0, minutes: 0, passAccuracy: 77, age: 32, club: 'Bayern Munich' },
-  { name: 'Bukayo Saka', team: 'England', position: 'FW', goals: 0, assists: 0, xG: 0, minutes: 0, passAccuracy: 83, age: 24, club: 'Arsenal' },
-  { name: 'Jude Bellingham', team: 'England', position: 'MF', goals: 0, assists: 0, xG: 0, minutes: 0, passAccuracy: 86, age: 22, club: 'Real Madrid' },
-  { name: 'Declan Rice', team: 'England', position: 'MF', goals: 0, assists: 0, xG: 0, minutes: 0, passAccuracy: 90, age: 26, club: 'Arsenal' },
-  { name: 'Lamine Yamal', team: 'Spain', position: 'FW', goals: 0, assists: 0, xG: 0, minutes: 0, passAccuracy: 84, age: 18, club: 'Barcelona' },
-  { name: 'Pedri', team: 'Spain', position: 'MF', goals: 0, assists: 0, xG: 0, minutes: 0, passAccuracy: 92, age: 22, club: 'Barcelona' },
-  { name: 'Rodri', team: 'Spain', position: 'MF', goals: 0, assists: 0, xG: 0, minutes: 0, passAccuracy: 94, age: 28, club: 'Manchester City' },
-  { name: 'Jamal Musiala', team: 'Germany', position: 'MF', goals: 0, assists: 0, xG: 0, minutes: 0, passAccuracy: 86, age: 22, club: 'Bayern Munich' },
-  { name: 'Florian Wirtz', team: 'Germany', position: 'MF', goals: 0, assists: 0, xG: 0, minutes: 0, passAccuracy: 85, age: 22, club: 'Bayer Leverkusen' },
-  { name: 'Joshua Kimmich', team: 'Germany', position: 'MF', goals: 0, assists: 0, xG: 0, minutes: 0, passAccuracy: 91, age: 30, club: 'Bayern Munich' },
-  { name: 'Cristiano Ronaldo', team: 'Portugal', position: 'FW', goals: 0, assists: 0, xG: 0, minutes: 0, passAccuracy: 78, age: 40, club: 'Al Nassr' },
-  { name: 'Bruno Fernandes', team: 'Portugal', position: 'MF', goals: 0, assists: 0, xG: 0, minutes: 0, passAccuracy: 84, age: 30, club: 'Manchester United' },
-  { name: 'Rafael Leão', team: 'Portugal', position: 'FW', goals: 0, assists: 0, xG: 0, minutes: 0, passAccuracy: 77, age: 25, club: 'AC Milan' },
-  { name: 'Virgil van Dijk', team: 'Netherlands', position: 'DF', goals: 0, assists: 0, xG: 0, minutes: 0, passAccuracy: 90, age: 33, club: 'Liverpool' },
-  { name: 'Memphis Depay', team: 'Netherlands', position: 'FW', goals: 0, assists: 0, xG: 0, minutes: 0, passAccuracy: 76, age: 30, club: 'Corinthians' },
-  { name: 'Frenkie de Jong', team: 'Netherlands', position: 'MF', goals: 0, assists: 0, xG: 0, minutes: 0, passAccuracy: 93, age: 27, club: 'Barcelona' },
-  { name: 'Kevin De Bruyne', team: 'Belgium', position: 'MF', goals: 0, assists: 0, xG: 0, minutes: 0, passAccuracy: 88, age: 33, club: 'Manchester City' },
-  { name: 'Romelu Lukaku', team: 'Belgium', position: 'FW', goals: 0, assists: 0, xG: 0, minutes: 0, passAccuracy: 72, age: 31, club: 'Roma' },
-  { name: 'Achraf Hakimi', team: 'Morocco', position: 'DF', goals: 0, assists: 0, xG: 0, minutes: 0, passAccuracy: 84, age: 26, club: 'PSG' },
-  { name: 'Sofyan Amrabat', team: 'Morocco', position: 'MF', goals: 0, assists: 0, xG: 0, minutes: 0, passAccuracy: 87, age: 28, club: 'Manchester United' },
-  { name: 'Christian Pulisic', team: 'United States', position: 'FW', goals: 0, assists: 0, xG: 0, minutes: 0, passAccuracy: 80, age: 26, club: 'AC Milan' },
-  { name: 'Tyler Adams', team: 'United States', position: 'MF', goals: 0, assists: 0, xG: 0, minutes: 0, passAccuracy: 85, age: 25, club: 'Bournemouth' },
-  { name: 'Alphonso Davies', team: 'Canada', position: 'DF', goals: 0, assists: 0, xG: 0, minutes: 0, passAccuracy: 82, age: 24, club: 'Bayern Munich' },
-  { name: 'Jonathan David', team: 'Canada', position: 'FW', goals: 0, assists: 0, xG: 0, minutes: 0, passAccuracy: 75, age: 25, club: 'Lille' },
-  { name: 'Hirving Lozano', team: 'Mexico', position: 'FW', goals: 0, assists: 0, xG: 0, minutes: 0, passAccuracy: 78, age: 29, club: 'PSV' },
-  { name: 'Edson Álvarez', team: 'Mexico', position: 'MF', goals: 0, assists: 0, xG: 0, minutes: 0, passAccuracy: 86, age: 27, club: 'West Ham' },
-  { name: 'Son Heung-min', team: 'South Korea', position: 'FW', goals: 0, assists: 0, xG: 0, minutes: 0, passAccuracy: 79, age: 33, club: 'Tottenham' },
-  { name: 'Kim Min-jae', team: 'South Korea', position: 'DF', goals: 0, assists: 0, xG: 0, minutes: 0, passAccuracy: 88, age: 28, club: 'Bayern Munich' },
-  { name: 'Sadio Mané', team: 'Senegal', position: 'FW', goals: 0, assists: 0, xG: 0, minutes: 0, passAccuracy: 77, age: 32, club: 'Al Nassr' },
-  { name: 'Luis Díaz', team: 'Colombia', position: 'FW', goals: 0, assists: 0, xG: 0, minutes: 0, passAccuracy: 80, age: 27, club: 'Liverpool' },
-  { name: 'James Rodríguez', team: 'Colombia', position: 'MF', goals: 0, assists: 0, xG: 0, minutes: 0, passAccuracy: 86, age: 33, club: 'León' },
-  { name: 'Luka Modrić', team: 'Croatia', position: 'MF', goals: 0, assists: 0, xG: 0, minutes: 0, passAccuracy: 90, age: 39, club: 'Real Madrid' },
-  { name: 'Federico Chiesa', team: 'Italy', position: 'FW', goals: 0, assists: 0, xG: 0, minutes: 0, passAccuracy: 78, age: 27, club: 'Liverpool' },
-  { name: 'Nicolas Jackson', team: 'Senegal', position: 'FW', goals: 0, assists: 0, xG: 0, minutes: 0, passAccuracy: 73, age: 23, club: 'Chelsea' },
-  { name: 'Takumi Minamino', team: 'Japan', position: 'FW', goals: 0, assists: 0, xG: 0, minutes: 0, passAccuracy: 81, age: 29, club: 'Monaco' },
-  { name: 'Moisés Caicedo', team: 'Ecuador', position: 'MF', goals: 0, assists: 0, xG: 0, minutes: 0, passAccuracy: 88, age: 23, club: 'Chelsea' },
 ]
 
 /** Group stage fixtures — MD1–MD3 for all 12 groups (no results until synced) */
@@ -261,8 +200,13 @@ function teamGroup(name: string): string {
   return '?'
 }
 
+function keyPlayerForTeam(team: string, squads: PlayerRecord[]): string {
+  return squads.find((p) => p.team === team && p.squadNumber <= 14)?.name ?? team
+}
+
 function buildStandings(): TeamRecord[] {
   const stats = new Map<string, TeamRecord>()
+  const squads = buildFullSquads(GROUPS_2026, false)
 
   for (const [group, teams] of Object.entries(GROUPS_2026)) {
     for (const name of teams) {
@@ -276,7 +220,7 @@ function buildStandings(): TeamRecord[] {
         possession: 50, form: [],
         shotsOnTarget: 0, cleanSheets: 0,
         coach: COACHES[name] ?? 'TBD',
-        keyPlayer: SQUAD_PLAYERS.find((p) => p.team === name)?.name ?? name,
+        keyPlayer: keyPlayerForTeam(name, squads),
       })
     }
   }
@@ -318,43 +262,8 @@ function buildMatches(): MatchRecord[] {
 }
 
 function buildPlayers(): PlayerRecord[] {
-  return SQUAD_PLAYERS.map((p) => ({ ...p, group: teamGroup(p.team) }))
+  return buildFullSquads(GROUPS_2026, false)
 }
-
-/** Illustrative squad stats for preview mockup (before World Cup kickoff) */
-const PREVIEW_SQUAD_PLAYERS: Omit<PlayerRecord, 'group'>[] = [
-  { name: 'Lionel Messi', team: 'Argentina', position: 'FW', goals: 3, assists: 4, xG: 2.8, minutes: 251, passAccuracy: 87, age: 38, club: 'Inter Miami' },
-  { name: 'Lautaro Martínez', team: 'Argentina', position: 'FW', goals: 4, assists: 1, xG: 3.1, minutes: 264, passAccuracy: 74, age: 28, club: 'Inter Milan' },
-  { name: 'Kylian Mbappé', team: 'France', position: 'FW', goals: 5, assists: 2, xG: 4.2, minutes: 270, passAccuracy: 81, age: 27, club: 'Real Madrid' },
-  { name: 'Harry Kane', team: 'England', position: 'FW', goals: 4, assists: 1, xG: 3.8, minutes: 270, passAccuracy: 77, age: 32, club: 'Bayern Munich' },
-  { name: 'Vinícius Jr.', team: 'Brazil', position: 'FW', goals: 4, assists: 2, xG: 3.6, minutes: 268, passAccuracy: 80, age: 25, club: 'Real Madrid' },
-  { name: 'Bukayo Saka', team: 'England', position: 'FW', goals: 3, assists: 2, xG: 2.2, minutes: 265, passAccuracy: 83, age: 24, club: 'Arsenal' },
-  { name: 'Lamine Yamal', team: 'Spain', position: 'FW', goals: 3, assists: 3, xG: 2.5, minutes: 255, passAccuracy: 84, age: 18, club: 'Barcelona' },
-  { name: 'Christian Pulisic', team: 'United States', position: 'FW', goals: 3, assists: 2, xG: 2.3, minutes: 268, passAccuracy: 80, age: 26, club: 'AC Milan' },
-  { name: 'Sadio Mané', team: 'Senegal', position: 'FW', goals: 3, assists: 1, xG: 2.4, minutes: 262, passAccuracy: 77, age: 32, club: 'Al Nassr' },
-  { name: 'Luis Díaz', team: 'Colombia', position: 'FW', goals: 3, assists: 2, xG: 2.5, minutes: 268, passAccuracy: 80, age: 27, club: 'Liverpool' },
-  ...SQUAD_PLAYERS.filter(
-    (p) =>
-      ![
-        'Lionel Messi',
-        'Lautaro Martínez',
-        'Kylian Mbappé',
-        'Harry Kane',
-        'Vinícius Jr.',
-        'Bukayo Saka',
-        'Lamine Yamal',
-        'Christian Pulisic',
-        'Sadio Mané',
-        'Luis Díaz',
-      ].includes(p.name)
-  ).map((p) => ({
-    ...p,
-    goals: p.goals || 1,
-    assists: p.assists || 0,
-    xG: 0.8,
-    minutes: 180,
-  })),
-]
 
 const PREVIEW_GROUP_RESULTS: Record<string, [string, string, number, number][]> = {
   A: [
@@ -428,6 +337,7 @@ const PREVIEW_KNOCKOUT_MATCHES: Omit<MatchRecord, 'group'>[] = [
 
 function buildPreviewStandings(): TeamRecord[] {
   const stats = new Map<string, TeamRecord>()
+  const squads = buildFullSquads(GROUPS_2026, true)
 
   for (const [group, teams] of Object.entries(GROUPS_2026)) {
     for (const name of teams) {
@@ -441,7 +351,7 @@ function buildPreviewStandings(): TeamRecord[] {
         possession: 50, form: [],
         shotsOnTarget: 0, cleanSheets: 0,
         coach: COACHES[name] ?? 'TBD',
-        keyPlayer: PREVIEW_SQUAD_PLAYERS.find((p) => p.team === name)?.name ?? name,
+        keyPlayer: keyPlayerForTeam(name, squads),
       })
     }
   }
@@ -507,7 +417,7 @@ function buildPreviewMatches(): MatchRecord[] {
 }
 
 function buildPreviewPlayers(): PlayerRecord[] {
-  return PREVIEW_SQUAD_PLAYERS.map((p) => ({ ...p, group: teamGroup(p.team) }))
+  return buildFullSquads(GROUPS_2026, true)
 }
 
 const LIVE_TEAMS = buildStandings()
@@ -587,6 +497,9 @@ function toMockPlayers(players: PlayerRecord[]) {
     xG: p.xG,
     minutes: p.minutes,
     passAccuracy: p.passAccuracy,
+    club: p.club,
+    clubForm: p.clubForm,
+    worldCupHistory: p.worldCupHistory,
   }))
 }
 

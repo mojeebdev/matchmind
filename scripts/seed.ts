@@ -106,7 +106,7 @@ async function seed() {
     console.log(`Seeded ${teamsResult.insertedCount} teams (12 groups A–L)`)
 
     const playersResult = await db.collection('players').insertMany(dataset.players)
-    console.log(`Seeded ${playersResult.insertedCount} players`)
+    console.log(`Seeded ${playersResult.insertedCount} players (48 squads · club form · WC history)`)
 
     const matchesResult = await db.collection('matches').insertMany(dataset.matches)
     const matchNote =

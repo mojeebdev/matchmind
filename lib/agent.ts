@@ -73,14 +73,16 @@ Given a question type and user question, generate the optimal MongoDB aggregatio
 
 Database collections:
 - matches: { homeTeam, awayTeam, score, date, stage, group, stats }
-- players: { name, team, goals, assists, xG, minutes, position } — 2026 tournament stats only
+- players: { name, team, goals, assists, xG, minutes, position, club, clubForm, recentClubMatches, worldCupHistory } — full 2026 squad profiles (48 teams, ~20 players each)
 - teams: { name, group, form, possession, shotsOnTarget, cleanSheets }
 - headToHead: { team1, team2, matches[], wins, draws, losses }
 - playerWorldCupCareers: { name, totalGoals, totalAppearances, appearances[], careerSummary } — factual 1930–2022 career data
 - worldCupEditions: { year, host, winner, runnerUp, goldenBoot, highlight } — every World Cup edition
 - worldCupRecords: { category, rank, holder, value, context } — all-time records and leaderboards
 
-For career/historical player questions (e.g. "Ronaldo World Cup goals"), query playerWorldCupCareers — not players.
+For a named player profile (club form + WC history), query players by exact name match.
+For career-only historical totals across eras, query playerWorldCupCareers.
+Players collection already embeds worldCupHistory summary when the player has past World Cups.
 
 Return ONLY a valid JSON object with:
 {

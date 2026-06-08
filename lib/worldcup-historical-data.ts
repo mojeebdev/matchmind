@@ -7,6 +7,7 @@
  */
 
 import type { MongoQueryPlan } from './types'
+import { findSquadPlayerName, getAllRosterNames } from './player-enrichment'
 
 export type TournamentAppearance = {
   year: number
@@ -581,6 +582,9 @@ const PLAYER_ALIASES: Record<string, string> = {
 }
 
 export function findPlayerInQuestion(question: string): string | null {
+  const squadMatch = findSquadPlayerName(question, getAllRosterNames())
+  if (squadMatch) return squadMatch
+
   const q = question.toLowerCase()
   for (const [alias, name] of Object.entries(PLAYER_ALIASES)) {
     if (q.includes(alias)) return name

@@ -1,4 +1,5 @@
 import type { MongoQueryPlan, QuestionType } from './types'
+import { matchPlayerQuery } from './player-queries'
 import { matchHistoricalQuery } from './worldcup-historical-data'
 
 export function getDefaultQueryForType(
@@ -6,6 +7,8 @@ export function getDefaultQueryForType(
   question: string
 ): MongoQueryPlan {
   const q = question.toLowerCase()
+  const playerQuery = matchPlayerQuery(question)
+  if (playerQuery) return playerQuery
 
   switch (questionType) {
     case 'stats': {

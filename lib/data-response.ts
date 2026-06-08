@@ -1,14 +1,7 @@
 import type { AgentResponse, QuestionType } from './types'
+import type { PlayerRecord } from './player-types'
 
-type PlayerRecord = {
-  name?: string
-  team?: string
-  goals?: number
-  assists?: number
-  xG?: number
-  position?: string
-  minutes?: number
-}
+type LegacyPlayerRecord = Partial<PlayerRecord>
 
 type TeamRecord = {
   name?: string
@@ -65,7 +58,7 @@ function hasLiveRecords(mongoData: Record<string, unknown>): boolean {
   )
 }
 
-function buildPlayerStats(players: PlayerRecord[]): AgentResponse['key_stats'] {
+function buildPlayerStats(players: LegacyPlayerRecord[]): AgentResponse['key_stats'] {
   return players.slice(0, 4).map((p) => ({
     label: p.name ?? 'Player',
     value: `${p.goals ?? 0}G / ${p.assists ?? 0}A`,
@@ -92,7 +85,7 @@ function buildMatchStats(matches: MatchRecord[]): AgentResponse['key_stats'] {
   })
 }
 
-function isPreTournamentPlayers(players: PlayerRecord[]): boolean {
+function isPreTournamentPlayers(players: LegacyPlayerRecord[]): boolean {
   return players.length > 0 && players.every((p) => (p.goals ?? 0) === 0 && (p.assists ?? 0) === 0)
 }
 
@@ -161,10 +154,44 @@ export function generateResponseFromMongoData(
     : 'Demo dataset'
 
   if (key === 'players' || records[0]?.goals !== undefined) {
-    const players = records as PlayerRecord[]
+    const players = records as LegacyPlayerRecord[]
     const sorted = [...players].sort(
       (a, b) => (b.goals ?? 0) - (a.goals ?? 0)
     )
+
+    if (players.length === 1 && players[0]?.clubForm) {
+      const p = players[0]
+      const clubMatches = (p.recentClubMatches ?? [])
+        .slice(0, 3)
+        .map((m) => `${m.opponent} (${m.result}, ${m.goals}G/${m.assists}A)`)
+        .join(' · ')
+      const wc = p.worldCupHistory
+      const wcLine = wc
+        ? `World Cup history: ${wc.totalGoals} goals in ${wc.tournamentsPlayed} tournaments — ${wc.summary}`
+        : 'No previous World Cup appearances on record — 2026 would be or is their debut.'
+
+      return {
+        question_type: questionType,
+        headline: `${p.name}: ${p.team} (#${p.squadNumber ?? '—'}) — Club & International Profile`,
+        answer:
+          `MatchMind pulled a full player profile from ${sourceLabel}.\n\n${p.name} (${p.age ?? '—'} y/o, ${p.position ?? '—'}) plays for ${p.club ?? '—'} and represents ${p.team ?? '—'} in Group ${p.group ?? '—'}.\n\n2026 tournament (this dataset): ${p.goals ?? 0} goals, ${p.assists ?? 0} assists, ${p.minutes ?? 0} minutes.\n\nClub form (${p.clubForm!.lastFive.join('-')}): ${p.clubForm!.seasonGoals} goals and ${p.clubForm!.seasonAssists} assists this season, ${p.clubForm!.avgRating.toFixed(1)} avg rating.\n\nRecent club matches: ${clubMatches || '—'}\n\n${wcLine}`,
+        key_stats: [
+          { label: 'Club season', value: `${p.clubForm!.seasonGoals}G / ${p.clubForm!.seasonAssists}A`, context: `${p.club ?? 'Club'} · form ${p.clubForm!.lastFive.join('')}` },
+          { label: '2026 tournament', value: `${p.goals ?? 0}G / ${p.assists ?? 0}A`, context: `${p.team ?? 'Nation'} · xG ${p.xG ?? 0}` },
+          {
+            label: 'World Cup career',
+            value: wc ? `${wc.totalGoals} goals` : 'WC debut',
+            context: wc ? `${wc.tournamentsPlayed} tournaments` : 'No prior WC apps',
+          },
+        ],
+        confidence: 'high',
+        follow_up: wc
+          ? `How does ${p.name}'s World Cup record compare to all-time greats?`
+          : `How has ${p.name} performed for ${p.team} in the group stage?`,
+        data_sources: [sourceLabel, 'players collection', 'club form + worldCupHistory'],
+        live_data: isLiveData,
+      }
+    }
 
     if (isPreTournamentPlayers(players)) {
       const sample = sorted.slice(0, 3)
