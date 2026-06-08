@@ -168,9 +168,9 @@ async function seed() {
 
     if (dataset.tournament.dataMode === 'preview') {
       console.log('\n✅ World Cup 2026 PREVIEW MOCKUP database ready!')
-      console.log('   Illustrative stats — clearly labeled in the agent UI until kickoff')
+      console.log('   Official 104 fixtures · group scores mockup · squads pending FIFA')
       console.log('   Re-seed or sync after 11 Jun 2026 for live results')
-      console.log('   Ask the agent: "Who are the top scorers in Group B?"')
+      console.log('   Ask the agent: "What are the Group A fixtures?" or "Who won the 2022 World Cup?"')
     } else {
       console.log('\n✅ World Cup 2026 LIVE database ready!')
       console.log('   48 teams · 12 groups · 104 fixtures · H2H (squads pending FIFA)')
