@@ -63,6 +63,23 @@ export function getDefaultQueryForType(
         pipeline: [{ $sort: { possession: -1 } }],
       }
     case 'historical': {
+      if (/head.to.head|h2h|between/.test(q)) {
+        const teams = ['Brazil', 'France', 'Argentina', 'Germany', 'England', 'Spain', 'Portugal', 'Mexico']
+        const mentioned = teams.filter((t) => q.includes(t.toLowerCase()))
+        if (mentioned.length >= 2) {
+          return {
+            collection: 'headToHead',
+            pipeline: [
+              {
+                $match: {
+                  team1: { $in: mentioned },
+                  team2: { $in: mentioned },
+                },
+              },
+            ],
+          }
+        }
+      }
       const historical = matchHistoricalQuery(question)
       if (historical) return historical
       return {

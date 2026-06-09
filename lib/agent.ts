@@ -57,11 +57,26 @@ Question: ${question}`
   }
 }
 
+const USE_DETERMINISTIC_QUERY = (questionType: QuestionType, question: string): boolean => {
+  const q = question.toLowerCase()
+  if (questionType === 'stats' && /group\s+([a-l])/i.test(q) && /scorer|goal|top/.test(q)) {
+    return true
+  }
+  if (questionType === 'historical' && /head.to.head|h2h|between/.test(q)) {
+    return true
+  }
+  return false
+}
+
 export async function generateMongoQuery(
   questionType: QuestionType,
   question: string
 ): Promise<MongoQueryPlan> {
   const fallback = getDefaultQueryForType(questionType, question)
+
+  if (USE_DETERMINISTIC_QUERY(questionType, question)) {
+    return fallback
+  }
 
   if (!isGeminiConfigured()) {
     return fallback

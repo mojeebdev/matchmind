@@ -381,7 +381,7 @@ export function getSeedDataset() {
         knockoutBracket: 'official',
         venues: 'official',
         kickoffTimes: 'official',
-        squads: 'pending-official',
+        squads: preview ? 'preview-mockup' : 'pending-official',
         headToHead: 'verified-historical',
         worldCupHistory: 'verified-historical',
         previewScores: preview ? 'mockup' : 'synced-live',

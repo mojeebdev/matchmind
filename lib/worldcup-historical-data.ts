@@ -629,7 +629,10 @@ export function matchHistoricalQuery(question: string): MongoQueryPlan | null {
     }
   }
 
-  if (/all.time|all time|record|most goals|top scorer|golden boot|leaderboard/.test(q)) {
+  if (
+    /all.time|all time|most goals|top scorer|golden boot|leaderboard/.test(q) ||
+    (/record/.test(q) && !/head.to.head|h2h|between/.test(q))
+  ) {
     const pipeline =
       /top scorer|most goals|all.time|all time/.test(q)
         ? [
