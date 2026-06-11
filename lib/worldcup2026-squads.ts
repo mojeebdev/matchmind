@@ -14,9 +14,12 @@ import { GROUP_L_SQUADS } from './squads/group-l'
 import { FIFA_SQUAD_SIZE } from './worldcup2026-official-fixtures'
 
 /**
- * Illustrative preview mockup squads for demo UX before FIFA publishes official
- * tournament rosters. Clearly labeled as mockup in seed metadata and agent responses.
+ * Tournament squads — Guardian WC2026 guide (48 × 26, Jun 2026).
+ * United States roster is FOX Sports official (Jun 10 2026); all others from Guardian.
+ * @see https://www.theguardian.com/football/2026/jun/06/world-cup-2026-squads-guide
  */
+export const GUARDIAN_SQUADS_ARTICLE_URL =
+  'https://www.theguardian.com/football/2026/jun/06/world-cup-2026-squads-guide'
 export const WC2026_ROSTERS: Record<string, RosterTuple[]> = {
   ...GROUP_A_SQUADS,
   ...GROUP_B_SQUADS,
@@ -34,8 +37,19 @@ export const WC2026_ROSTERS: Record<string, RosterTuple[]> = {
 
 export const WC2026_SQUAD_SIZE = FIFA_SQUAD_SIZE
 
+/** FOX Sports official USMNT 26-man roster (Jun 10, 2026). */
+export const FOX_USMNT_ROSTER_ARTICLE_URL =
+  'https://www.foxsports.com/stories/soccer/usmnt-world-cup-roster-2026-pulisic-mckennie-weah-adams'
+
+/** Teams with published official tournament squads (not yet all 48). */
+export const OFFICIAL_SQUAD_TEAMS = new Set(['United States'])
+
 export function hasOfficialSquads(): boolean {
-  return false
+  return OFFICIAL_SQUAD_TEAMS.size === Object.keys(WC2026_ROSTERS).length
+}
+
+export function isOfficialSquadTeam(team: string): boolean {
+  return OFFICIAL_SQUAD_TEAMS.has(team)
 }
 
 export function getAllRosterNames(): string[] {

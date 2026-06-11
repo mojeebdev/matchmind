@@ -19,7 +19,17 @@ import {
   FIFA_TOTAL_MATCHES,
   FIFA_SQUAD_SIZE,
 } from './worldcup2026-official-fixtures'
-import { getTotalPlayerCount } from './worldcup2026-squads'
+import { getFoxAmericasMetaForTeam, getFoxAmericasTournamentBundle } from './fox-americas-power-rankings'
+import { getFoxTournamentPredictions } from './fox-predictions'
+import { getNprWorldCupFactsBundle } from './npr-wc2026-facts'
+import { getGuardianTeamGuide } from './guardian-team-guides'
+import { getReutersTeamKeyPlayerLabel } from './reuters-key-players'
+import {
+  FOX_USMNT_ROSTER_ARTICLE_URL,
+  GUARDIAN_SQUADS_ARTICLE_URL,
+  OFFICIAL_SQUAD_TEAMS,
+  getTotalPlayerCount,
+} from './worldcup2026-squads'
 import type { PlayerRecord } from './player-types'
 
 export type { PlayerRecord, ClubMatch, WorldCupHistorySummary } from './player-types'
@@ -42,6 +52,16 @@ export type TeamRecord = {
   cleanSheets: number
   coach: string
   keyPlayer: string
+  /** Guardian team-guide summary */
+  teamBio?: string
+  strengths?: string
+  weaknesses?: string
+  guardianPlayerPick?: string
+  teamGuideByline?: string
+  /** FOX Sports Americas power rank (1–12), CONCACAF + CONMEBOL teams only */
+  foxAmericasRank?: number
+  foxAmericasTitleOdds?: string
+  foxAmericasNote?: string
 }
 
 export type MatchRecord = {
@@ -71,6 +91,8 @@ export type H2HRecord = {
   team2Wins: number
   draws: number
   lastFive: { date: string; result: string; competition: string }[]
+  /** Set when no senior meetings are on record */
+  dataNote?: string
 }
 
 export const GROUPS_2026 = OFFICIAL_GROUPS_2026
@@ -107,7 +129,7 @@ const COACHES: Record<string, string> = {
 
 const VENUES = [...OFFICIAL_VENUES]
 
-const H2H_DATA: H2HRecord[] = [
+const H2H_CURATED: H2HRecord[] = [
   { team1: 'Brazil', team2: 'France', totalMatches: 12, team1Wins: 5, team2Wins: 4, draws: 3, lastFive: [{ date: '2022-11-26', result: '2-1 Brazil', competition: 'World Cup' }, { date: '2021-06-08', result: '3-0 France', competition: 'Friendly' }, { date: '2018-07-07', result: '2-1 France', competition: 'World Cup' }] },
   { team1: 'Argentina', team2: 'Germany', totalMatches: 8, team1Wins: 3, team2Wins: 3, draws: 2, lastFive: [{ date: '2014-07-13', result: '1-0 Germany', competition: 'World Cup Final' }, { date: '2023-10-18', result: '2-2 Draw', competition: 'Friendly' }] },
   { team1: 'Argentina', team2: 'Brazil', totalMatches: 15, team1Wins: 5, team2Wins: 7, draws: 3, lastFive: [{ date: '2023-11-21', result: '1-0 Argentina', competition: 'World Cup Qualifier' }, { date: '2021-07-10', result: '1-0 Argentina', competition: 'Copa América Final' }] },
@@ -123,6 +145,65 @@ const H2H_DATA: H2HRecord[] = [
   { team1: 'Netherlands', team2: 'Sweden', totalMatches: 8, team1Wins: 3, team2Wins: 3, draws: 2, lastFive: [{ date: '2020-11-11', result: '1-1 Draw', competition: 'Nations League' }] },
   { team1: 'France', team2: 'Senegal', totalMatches: 2, team1Wins: 1, team2Wins: 0, draws: 1, lastFive: [{ date: '2022-05-31', result: '1-1 Draw', competition: 'Friendly' }] },
 ]
+
+function h2hPairKey(team1: string, team2: string): string {
+  return [team1, team2].sort().join('|')
+}
+
+/** All 72 group-stage pairings — curated history merged with placeholders for unmet foes */
+function buildGroupStageH2H(): H2HRecord[] {
+  const curated = new Map<string, H2HRecord>()
+  for (const row of H2H_CURATED) {
+    curated.set(h2hPairKey(row.team1, row.team2), row)
+  }
+
+  const pairs = new Set<string>()
+  for (const f of OFFICIAL_GROUP_FIXTURES) {
+    pairs.add(h2hPairKey(f.homeTeam, f.awayTeam))
+  }
+
+  return [...pairs].sort().map((key) => {
+    const hit = curated.get(key)
+    if (hit) return hit
+    const [team1, team2] = key.split('|')
+    return {
+      team1,
+      team2,
+      totalMatches: 0,
+      team1Wins: 0,
+      team2Wins: 0,
+      draws: 0,
+      lastFive: [],
+      dataNote: 'No senior international meetings on record before the WC2026 group draw.',
+    }
+  })
+}
+
+const H2H_DATA = buildGroupStageH2H()
+
+function guardianTeamFields(name: string): {
+  coach: string
+  teamBio?: string
+  strengths?: string
+  weaknesses?: string
+  guardianPlayerPick?: string
+  teamGuideByline?: string
+  fifaRank?: number
+} {
+  const guide = getGuardianTeamGuide(name)
+  if (!guide) {
+    return { coach: COACHES[name] ?? 'TBD' }
+  }
+  return {
+    coach: guide.coach || COACHES[name] || 'TBD',
+    teamBio: guide.bio || undefined,
+    strengths: guide.strengths || undefined,
+    weaknesses: guide.weaknesses || undefined,
+    guardianPlayerPick: guide.playerPick || undefined,
+    teamGuideByline: guide.byline || undefined,
+    ...(guide.fifaRanking !== undefined ? { fifaRank: guide.fifaRanking } : {}),
+  }
+}
 
 function teamGroup(name: string): string {
   for (const [g, teams] of Object.entries(GROUPS_2026)) {
@@ -145,8 +226,9 @@ function buildStandings(): TeamRecord[] {
         goalsFor: 0, goalsAgainst: 0, points: 0,
         possession: 50, form: [],
         shotsOnTarget: 0, cleanSheets: 0,
-        coach: COACHES[name] ?? 'TBD',
-        keyPlayer: 'TBD',
+        keyPlayer: getReutersTeamKeyPlayerLabel(name),
+        ...guardianTeamFields(name),
+        ...getFoxAmericasMetaForTeam(name),
       })
     }
   }
@@ -277,8 +359,9 @@ function buildPreviewStandings(): TeamRecord[] {
         goalsFor: 0, goalsAgainst: 0, points: 0,
         possession: 50, form: [],
         shotsOnTarget: 0, cleanSheets: 0,
-        coach: COACHES[name] ?? 'TBD',
-        keyPlayer: 'TBD',
+        keyPlayer: getReutersTeamKeyPlayerLabel(name),
+        ...guardianTeamFields(name),
+        ...getFoxAmericasMetaForTeam(name),
       })
     }
   }
@@ -381,16 +464,26 @@ export function getSeedDataset() {
         knockoutBracket: 'official',
         venues: 'official',
         kickoffTimes: 'official',
-        squads: preview ? 'preview-mockup' : 'pending-official',
-        headToHead: 'verified-historical',
+        squads: 'guardian-sourced',
+        playerBios: 'guardian-sourced',
+        teamGuides: 'guardian-sourced',
+        headToHead: 'verified-historical-plus-group-placeholders',
         worldCupHistory: 'verified-historical',
         previewScores: preview ? 'mockup' : 'synced-live',
         knockoutResults: preview ? 'scheduled' : 'synced-live',
         liveResults: preview ? 'pending-kickoff' : 'synced-live',
       },
       dataNote: preview
-        ? 'Official FIFA schedule: 104 matches. Tournament squads pending FIFA publication. Group-stage scores are illustrative mockup; knockouts scheduled with bracket placeholders.'
-        : 'Official 104-match schedule with live results synced via npm run sync / admin agent. Tournament squads pending FIFA publication.',
+        ? 'Official FIFA schedule: 104 matches. Squads/bios/team guides: Guardian WC2026 guide (48×26); United States roster from FOX official 26. H2H: 14 curated histories + 58 group placeholders. Group-stage scores are illustrative mockup; knockouts scheduled with bracket placeholders.'
+        : 'Official 104-match schedule with live results synced via npm run sync / admin agent. Squads from Guardian + FOX USA; scores/stats synced live post-kickoff.',
+      foxPredictions: getFoxTournamentPredictions(),
+      foxAmericasRankings: getFoxAmericasTournamentBundle(),
+      nprFacts: getNprWorldCupFactsBundle(),
+      officialSquadTeams: [...OFFICIAL_SQUAD_TEAMS],
+      squadSources: {
+        default: GUARDIAN_SQUADS_ARTICLE_URL,
+        'United States': FOX_USMNT_ROSTER_ARTICLE_URL,
+      },
     },
   }
 }

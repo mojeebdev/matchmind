@@ -1,5 +1,10 @@
 import { enrichSquadPlayer } from './player-enrichment'
-import type { PlayerRecord, SquadRosterEntry } from './player-types'
+import type { PlayerPosition, PlayerRecord, SquadRosterEntry } from './player-types'
+import {
+  listReutersKeyPlayersForTeam,
+  rosterMatchesReutersPlayer,
+} from './reuters-key-players'
+import { FIFA_SQUAD_SIZE } from './worldcup2026-official-fixtures'
 import { WC2026_ROSTERS, getAllRosterNames } from './worldcup2026-squads'
 
 export { getAllRosterNames }
@@ -45,6 +50,36 @@ function rosterToEntry(team: string, tuple: (typeof WC2026_ROSTERS)[string][numb
   }
 }
 
+function appendMissingReutersKeyPlayers(
+  team: string,
+  entries: SquadRosterEntry[]
+): SquadRosterEntry[] {
+  if (entries.length >= FIFA_SQUAD_SIZE) return entries
+
+  const reutersPlayers = listReutersKeyPlayersForTeam(team)
+  if (reutersPlayers.length === 0) return entries
+
+  const next = [...entries]
+  let squadNumber = Math.max(0, ...next.map((entry) => entry.squadNumber)) + 1
+
+  for (const reutersPlayer of reutersPlayers) {
+    if (next.some((entry) => rosterMatchesReutersPlayer(entry.name, reutersPlayer))) {
+      continue
+    }
+
+    next.push({
+      name: reutersPlayer.name,
+      team,
+      position: (reutersPlayer.position ?? 'MF') as PlayerPosition,
+      age: 26,
+      club: reutersPlayer.club ?? 'TBD',
+      squadNumber: squadNumber++,
+    })
+  }
+
+  return next
+}
+
 export function buildFullSquads(
   groups: Record<string, string[]>,
   previewMode: boolean
@@ -53,8 +88,12 @@ export function buildFullSquads(
 
   for (const [team, roster] of Object.entries(WC2026_ROSTERS)) {
     const group = teamGroup(team, groups)
-    for (const tuple of roster) {
-      const entry = rosterToEntry(team, tuple)
+    const entries = appendMissingReutersKeyPlayers(
+      team,
+      roster.map((tuple) => rosterToEntry(team, tuple))
+    )
+
+    for (const entry of entries) {
       let tournamentStats = { goals: 0, assists: 0, xG: 0, minutes: 0 }
 
       if (previewMode) {

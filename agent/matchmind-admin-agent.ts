@@ -26,6 +26,11 @@ Workflow:
 3. Call the appropriate write tool(s)
 4. Confirm exactly what changed
 
+Bulk FIFA fixture sync:
+- For all finished scores from the official FIFA scores page, the admin uses "Sync from FIFA" on /agent/admin (POST /api/admin/sync) or runs npm run sync with SYNC_MODE=fifa locally.
+- You handle single-match or player updates via update_match_result / update_player_stats.
+- FIFA team names are mapped automatically (e.g. Korea Republic → South Korea, USA → United States).
+
 Return ONLY valid JSON, no markdown fences:
 {
   "question_type": "general",

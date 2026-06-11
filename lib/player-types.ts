@@ -40,8 +40,37 @@ export type PlayerRecord = {
     seasonAssists: number
     avgRating: number
   }
+  /** curated = hand-picked samples; illustrative = hash-generated demo data */
+  clubFormSource?: 'curated' | 'illustrative'
   recentClubMatches: ClubMatch[]
+  /** Guardian squad-guide headshot */
+  playerImageUrl?: string
+  /** Guardian per-player bio (FOX scoutBio takes precedence for spotlight cards) */
+  guardianBio?: string
+  guardianBioSource?: string
+  /** Guardian editorial tag (key player, promising talent, etc.) */
+  scoutTag?: string
+  /** National-team caps — FOX Top 100 or Guardian squad guide */
+  nationalCaps?: number
+  nationalGoals?: number
+  nationalCapsSource?: string
   worldCupHistory: WorldCupHistorySummary | null
+  /** Scout spotlight — Reuters key player and/or FOX Top 100 */
+  keyPlayer?: boolean
+  scoutNote?: string
+  scoutSource?: string
+  /** FOX analyst paragraph(s) for richer scout cards */
+  scoutBio?: string
+  scoutBioSource?: string
+  scoutBioAnalyst?: string
+  /** FOX Sports World Cup Top 100 rank (1 = best) */
+  foxRank?: number
+  foxCaps?: number
+  /** Omitted from squad or injured per FOX editor's note */
+  foxUnavailable?: string
+  /** FOX analyst prediction tags (Golden Ball, breakout, etc.) */
+  foxPredictions?: string[]
+  foxPredictionNote?: string
 }
 
 export type SquadRosterEntry = {

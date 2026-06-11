@@ -1,6 +1,6 @@
 # MatchMind Data Sources — Real vs Mockup
 
-This document defines exactly what is **official FIFA data**, what is **verified historical**, and what is **illustrative mockup** in MatchMind.
+This document defines exactly what is **official FIFA data**, what is **verified historical**, what is **editorial (third-party)**, and what is **illustrative mockup** in MatchMind.
 
 ---
 
@@ -18,22 +18,25 @@ Sourced from the **December 5, 2025 final draw** and the **FIFA World Cup 2026 m
 | 16 host venues & cities | `OFFICIAL_VENUES` | Official |
 | Tournament window (11 Jun – 19 Jul 2026) | `lib/tournament-phase.ts` | Official |
 
-**Groups (official draw):**
+---
 
-| Group | Teams |
-|-------|-------|
-| A | Mexico, South Africa, South Korea, Czech Republic |
-| B | Canada, Bosnia and Herzegovina, Qatar, Switzerland |
-| C | Brazil, Morocco, Haiti, Scotland |
-| D | United States, Paraguay, Australia, Turkey |
-| E | Germany, Curaçao, Ivory Coast, Ecuador |
-| F | Netherlands, Japan, Sweden, Tunisia |
-| G | Belgium, Iran, New Zealand, Egypt |
-| H | Spain, Cape Verde, Saudi Arabia, Uruguay |
-| I | France, Senegal, Iraq, Norway |
-| J | Argentina, Algeria, Austria, Jordan |
-| K | Portugal, DR Congo, Uzbekistan, Colombia |
-| L | England, Croatia, Ghana, Panama |
+## Editorial squads & guides (Guardian + FOX)
+
+| Dataset | Location | Status |
+|---------|----------|--------|
+| Tournament squads (48 × 26 = 1,248) | `lib/squads/group-*.ts` | Guardian WC2026 squad guide (Jun 2026) |
+| United States roster (26) | `lib/squads/group-d.ts` | **FOX Sports official** USMNT roster (Jun 10 2026) — overrides Guardian USA |
+| Per-player bios & photos | `lib/guardian-player-profiles.ts` | Guardian (all 1,248 players) |
+| Team guides (coach, strengths, weaknesses, player pick) | `lib/guardian-team-guides.ts` | Guardian (all 48 teams) |
+| FOX Top 100 ranks & caps | `lib/fox-top100-players.ts` | FOX Sports (Jun 2026) |
+| FOX analyst bios | `lib/fox-player-bios.ts` | FOX Sports Top 100 + USMNT roster |
+| FOX predictions & Americas rankings | `lib/fox-predictions.ts`, `lib/fox-americas-power-rankings.ts` | FOX Sports (Jun 2026) |
+| Reuters key-player spotlights | `lib/reuters-key-players.ts` | Reuters (Jun 2026) |
+| NPR tournament facts | `lib/npr-wc2026-facts.ts` | NPR (Jun 2026) |
+
+**Regenerate Guardian libs:** `npx tsx scripts/generate-guardian-profiles.ts`
+
+`tournament.squadSources` in seed metadata: Guardian default URL; United States points to FOX roster article. `OFFICIAL_SQUAD_TEAMS` = USA only (FIFA has not published all 48 official squads).
 
 ---
 
@@ -42,29 +45,15 @@ Sourced from the **December 5, 2025 final draw** and the **FIFA World Cup 2026 m
 | Dataset | Location | Status |
 |---------|----------|--------|
 | World Cup editions 1930–2022 | `lib/worldcup-historical-data.ts` | Verified |
-| Player World Cup careers | `playerWorldCupCareers` collection | Verified |
-| Head-to-head records | `H2H_DATA` in `lib/worldcup2026-data.ts` | Verified past meetings |
+| Player World Cup careers (20 curated) | `PLAYER_WORLD_CUP_CAREERS` | Verified — matched to 2026 rosters via `lib/player-name-match.ts` |
+| Head-to-head (14 curated meetings) | `H2H_CURATED` in `lib/worldcup2026-data.ts` | Verified past meetings |
+| Head-to-head (72 group pairings) | `buildGroupStageH2H()` | 14 verified + **58 placeholders** (`dataNote` when no meetings on record) |
 
 Historical data is factual and does **not** use preview mockup labeling.
 
 ---
 
-## Pending official (not seeded yet)
-
-| Dataset | Location | Status |
-|---------|----------|--------|
-| Tournament squads (48 × 26) | `players` collection / `lib/worldcup2026-squads.ts` | **Pending** — FIFA has not published official squads |
-| Club form & recent matches | `lib/player-enrichment.ts` | Populated only when official squads are added |
-
-MatchMind does **not** seed curated or estimated rosters. The `players` collection stays empty until FIFA publishes official tournament squads.
-
-| Dataset | Location | Status |
-|---------|----------|--------|
-| Coaches & FIFA ranks | `lib/worldcup2026-data.ts` | Approximate (Nov 2025 rankings) |
-
----
-
-## Mockup (illustrative — preview mode only)
+## Illustrative / demo (preview mode only)
 
 Active when `now < 2026-06-11` or `FORCE_TOURNAMENT_PREVIEW=true`. Clearly labeled **◇ Preview mockup** in the UI.
 
@@ -72,8 +61,11 @@ Active when `now < 2026-06-11` or `FORCE_TOURNAMENT_PREVIEW=true`. Clearly label
 |---------|----------|--------|
 | Group-stage scores | `PREVIEW_SCORES` in `lib/worldcup2026-data.ts` | Mockup |
 | Standings derived from mock scores | `buildPreviewStandings()` | Mockup |
-| Player goals/assists/xG in tournament | `lib/squad-builder.ts` `PREVIEW_STATS` | Mockup (only when official squads exist) |
-**Important:** All **104 fixtures** use official pairings, dates, venues, and bracket placeholders. Only **group-stage results** are fabricated in preview mode.
+| Player goals/assists/xG in tournament | `lib/squad-builder.ts` `PREVIEW_STATS` | Mockup |
+| Club form & recent matches (most players) | `lib/player-enrichment.ts` | **Illustrative** (`clubFormSource: 'illustrative'`) — 10 stars are **curated** |
+| Pass accuracy defaults | `player-enrichment.ts` | Estimated |
+
+**Important:** All **104 fixtures** use official pairings, dates, venues, and bracket placeholders. Only **group-stage results** and most **club-form samples** are fabricated in preview mode.
 
 ---
 
@@ -81,13 +73,16 @@ Active when `now < 2026-06-11` or `FORCE_TOURNAMENT_PREVIEW=true`. Clearly label
 
 Active on/after **11 June 2026** or with `FORCE_TOURNAMENT_LIVE=true`. Labeled **● Live MongoDB** in the UI.
 
+**Recommended sync:** `SYNC_MODE=fifa` → `npm run sync` (or `/agent/admin` → Sync from FIFA).
+
 | Dataset | Source | Status |
 |---------|--------|--------|
-| Match results & scores | `npm run sync` or admin agent | Synced live |
-| Player tournament stats | Admin agent / sync pipeline | Synced live |
-| Standings | Computed from live results | Live |
+| Match results & scores | FIFA `api.fifa.com` via `lib/fifa-sync.ts` | Synced on `npm run sync` |
+| Group standings | Recalculated in MongoDB from finished group matches | Auto after score sync |
+| Player tournament stats | Admin agent or `data/sync/feed.json` (`SYNC_MODE=both`) | Manual / feed only — FIFA sync does not include player stats |
+| Knockout results | Same FIFA sync when matches finish | Synced live |
 
-Knockout bracket (matches 73–104) is **pre-seeded** with official FIFA placeholders (e.g. "Winner Group A"). Results fill in via sync after the group stage.
+Knockout bracket (matches 73–104) is **pre-seeded** with official FIFA placeholders. Results fill in via sync as FIFA reports them.
 
 ---
 
@@ -97,7 +92,7 @@ Knockout bracket (matches 73–104) is **pre-seeded** with official FIFA placeho
 npm run seed
 ```
 
-Writes `tournament.dataSources` and `tournament.dataMode` to MongoDB so the agent knows what is official vs mockup.
+Writes `tournament.dataSources` and `tournament.dataMode` to MongoDB so the agent knows what is official vs mockup vs editorial.
 
 ---
 
@@ -105,4 +100,6 @@ Writes `tournament.dataSources` and `tournament.dataMode` to MongoDB so the agen
 
 - [FIFA World Cup 2026 final draw](https://www.fifa.com/en/tournaments/mens/worldcup/canadamexicousa2026/articles/final-draw-results)
 - [FIFA match schedule PDF](https://digitalhub.fifa.com/m/1be9ce37eb98fcc5/original/FWC26-Match-Schedule_English.pdf)
-- [2026 FIFA World Cup draw (Wikipedia)](https://en.wikipedia.org/wiki/2026_FIFA_World_Cup_draw)
+- [Guardian WC2026 squads guide](https://www.theguardian.com/football/2026/jun/06/world-cup-2026-squads-guide)
+- [FOX Sports Top 100](https://www.foxsports.com/stories/soccer/world-cup-2026-ranking-best-100-players)
+- [FOX USMNT roster](https://www.foxsports.com/stories/soccer/usmnt-world-cup-roster-2026-pulisic-mckennie-weah-adams)

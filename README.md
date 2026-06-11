@@ -28,8 +28,8 @@ It classifies intent, queries the MongoDB football intelligence database via MCP
 
 | Mode | When | Badge | What's official | What's mockup |
 |---|---|---|---|---|
-| **Preview mockup** | Before 11 Jun 2026 | ◇ Preview mockup (amber) | Groups, **104 fixtures**, venues, kickoff times, H2H history | Group-stage scores & standings only; squads pending FIFA |
-| **Live** | On/after kickoff | ● Live MongoDB (green) | Fixtures + synced real results | — |
+| **Preview mockup** | Before 11 Jun 2026 | ◇ Preview mockup (amber) | Groups, **104 fixtures**, venues, squads (Guardian + FOX USA), H2H | Group-stage scores, standings, player WC stats |
+| **Live** | On/after kickoff | ● Live MongoDB (green) | Fixtures + FIFA-synced scores & standings | Player WC stats until manual feed / admin update |
 | **Demo** | MongoDB not configured | ○ Demo data | Same official fixture structure | In-memory fallback scores |
 
 Automatic switch is date-based (`lib/tournament-phase.ts`). Override for testing:
@@ -111,6 +111,30 @@ Populates 48 teams, 12 groups, players, matches, and head-to-head records.
 - **Before kickoff:** seeds **preview mockup** results (sample scores + knockouts) — `tournament.dataMode: preview`
 - **After kickoff:** seeds **live** fixtures only (scheduled, no fake results) — sync real scores with `npm run sync`
 
+### Live sync (recommended)
+
+After kickoff, pull **finished match scores** from FIFA into MongoDB. Standings recalculate automatically.
+
+```bash
+# .env — default in .env.local.example
+SYNC_MODE=fifa
+
+npm run sync -- --dry-run   # preview what FIFA would apply
+npm run sync                # write scores to MongoDB
+```
+
+**Also works from the UI:** `/agent/admin` → **Sync from FIFA** (uses `POST /api/admin/sync`).
+
+| `SYNC_MODE` | Source | Best for |
+|---|---|---|
+| **`fifa`** (default) | `api.fifa.com` | Match scores + standings — easiest |
+| `feed` | `data/sync/feed.json` | Manual scores + player goal deltas |
+| `both` | FIFA + local feed | Scores from FIFA; player stats from feed |
+
+FIFA sync does **not** pull player goals/assists — use the admin agent or `feed` for that. See [docs/DATA-SOURCES.md](docs/DATA-SOURCES.md).
+
+**Match days:** run `npm run sync` after final whistles, or schedule it every 15–30 minutes.
+
 ### Run locally
 
 ```bash
@@ -148,21 +172,27 @@ These stay on your machine — not committed:
 
 ### Update data (operator workflow)
 
-**Option A — Admin agent (demo-friendly)**
+**Option A — FIFA sync (recommended)**
+
+```bash
+SYNC_MODE=fifa npm run sync
+```
+
+Or `/agent/admin` → **Sync from FIFA**.
+
+**Option B — Admin agent (spot fixes & player stats)**
 
 1. Open `/agent/admin`
 2. Enter `ADMIN_SECRET` from `.env`
-3. Say: *"Mexico beat South Korea 2-1 in Group A. Update standings."*
+3. Example: *"Mbappé scored — add 1 goal to his tournament total."*
 
-**Option B — Local sync (private)**
+**Option C — Local feed (player stats + manual overrides)**
 
 ```bash
-# one-time setup
 cp data/sync/feed.example.json data/sync/feed.json
-# edit data/sync/feed.json with scores / player deltas
+# edit feed.json — player goalsDelta / assistsDelta
 
-npm run sync -- --dry-run   # preview
-npm run sync                # apply to MongoDB
+SYNC_MODE=both npm run sync   # FIFA scores + feed player updates
 ```
 
 ### Google Cloud (optional)
@@ -190,6 +220,7 @@ GEMINI_MODEL=gemini-2.5-flash-lite
 USE_ADK_AGENT=true
 GOOGLE_CLOUD_PROJECT=...
 ADMIN_SECRET=...                # /agent/admin
+SYNC_MODE=fifa                  # live scores from FIFA (npm run sync)
 ```
 
 ---

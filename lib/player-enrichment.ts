@@ -1,9 +1,26 @@
+import { getFoxPlayerBioMeta } from './fox-player-bios'
+import { getFoxPredictionMeta } from './fox-predictions'
+import { getFoxTop100Meta } from './fox-top100-players'
+import { getGuardianPlayerProfile } from './guardian-player-profiles'
+import { normalizePlayerName, playerLastName, playerNamesMatch } from './player-name-match'
+import { getReutersKeyPlayerMeta } from './reuters-key-players'
 import { PLAYER_WORLD_CUP_CAREERS } from './worldcup-historical-data'
-import type { PlayerPosition, PlayerRecord, SquadRosterEntry } from './player-types'
+import type { PlayerPosition, PlayerRecord, SquadRosterEntry, WorldCupHistorySummary } from './player-types'
+import type { PlayerWorldCupCareer } from './worldcup-historical-data'
 
-const CAREER_BY_NAME = new Map(
-  PLAYER_WORLD_CUP_CAREERS.map((c) => [c.name.toLowerCase(), c])
-)
+const GUARDIAN_BIO_SOURCE = 'Guardian WC2026 squad guide (Jun 2026)'
+
+const CAREER_BY_NORM = new Map<string, PlayerWorldCupCareer>()
+const CAREERS_BY_2026_TEAM = new Map<string, PlayerWorldCupCareer[]>()
+
+for (const career of PLAYER_WORLD_CUP_CAREERS) {
+  CAREER_BY_NORM.set(normalizePlayerName(career.name), career)
+  if (career.worldCup2026Team) {
+    const list = CAREERS_BY_2026_TEAM.get(career.worldCup2026Team) ?? []
+    list.push(career)
+    CAREERS_BY_2026_TEAM.set(career.worldCup2026Team, list)
+  }
+}
 
 const OPPONENTS = [
   'Barcelona', 'Real Madrid', 'Bayern Munich', 'Liverpool', 'Arsenal', 'Chelsea',
@@ -174,8 +191,20 @@ function generateClubForm(name: string, position: PlayerPosition, club: string):
   }
 }
 
-function buildWorldCupHistory(name: string): PlayerRecord['worldCupHistory'] {
-  const career = CAREER_BY_NAME.get(name.toLowerCase())
+function findWorldCupCareer(name: string, team: string): PlayerWorldCupCareer | undefined {
+  const norm = normalizePlayerName(name)
+  const direct = CAREER_BY_NORM.get(norm)
+  if (direct) return direct
+
+  for (const career of CAREERS_BY_2026_TEAM.get(team) ?? []) {
+    if (playerNamesMatch(name, career.name)) return career
+  }
+
+  return undefined
+}
+
+function buildWorldCupHistory(name: string, team: string): WorldCupHistorySummary | null {
+  const career = findWorldCupCareer(name, team)
   if (!career || career.tournamentsPlayed === 0) return null
   return {
     tournamentsPlayed: career.tournamentsPlayed,
@@ -205,7 +234,26 @@ export function enrichSquadPlayer(
     minutes: 0,
   }
 ): PlayerRecord {
+  const isCuratedForm = entry.name in CURATED_CLUB_FORM
   const clubProfile = CURATED_CLUB_FORM[entry.name] ?? generateClubForm(entry.name, entry.position, entry.club)
+  const guardian = getGuardianPlayerProfile(entry.name, entry.team)
+  const reuters = getReutersKeyPlayerMeta(entry.name, entry.team)
+  const fox = getFoxTop100Meta(entry.name, entry.team)
+  const foxBio = getFoxPlayerBioMeta(entry.name, entry.team)
+  const foxPredictions = getFoxPredictionMeta(entry.name, entry.team)
+  const nationalCaps = fox.foxCaps ?? guardian?.caps
+  const nationalCapsSource = fox.foxCaps
+    ? 'FOX Sports Top 100 (Jun 2026)'
+    : guardian?.caps !== undefined
+      ? GUARDIAN_BIO_SOURCE
+      : undefined
+  const spotlight = fox.scoutNote
+    ? { scoutNote: fox.scoutNote, scoutSource: fox.scoutSource }
+    : foxPredictions.foxPredictionNote
+      ? { scoutNote: foxPredictions.foxPredictionNote, scoutSource: 'FOX Sports Predictions (Jun 2026)' }
+      : reuters.keyPlayer
+        ? { scoutNote: reuters.scoutNote, scoutSource: reuters.scoutSource }
+        : null
 
   return {
     name: entry.name,
@@ -226,8 +274,43 @@ export function enrichSquadPlayer(
       seasonAssists: clubProfile.seasonAssists,
       avgRating: clubProfile.avgRating,
     },
+    clubFormSource: isCuratedForm ? 'curated' : 'illustrative',
     recentClubMatches: clubProfile.recentClubMatches,
-    worldCupHistory: buildWorldCupHistory(entry.name),
+    worldCupHistory: buildWorldCupHistory(entry.name, entry.team),
+    ...(guardian?.imageUrl ? { playerImageUrl: guardian.imageUrl } : {}),
+    ...(guardian?.bio ? { guardianBio: guardian.bio, guardianBioSource: GUARDIAN_BIO_SOURCE } : {}),
+    ...(guardian?.scoutTag ? { scoutTag: guardian.scoutTag } : {}),
+    ...(nationalCaps !== undefined
+      ? {
+          nationalCaps,
+          ...(guardian?.nationalGoals !== undefined ? { nationalGoals: guardian.nationalGoals } : {}),
+          ...(nationalCapsSource ? { nationalCapsSource } : {}),
+        }
+      : guardian?.nationalGoals !== undefined
+        ? { nationalGoals: guardian.nationalGoals, nationalCapsSource: GUARDIAN_BIO_SOURCE }
+        : {}),
+    ...(foxBio.scoutBio
+      ? {
+          scoutBio: foxBio.scoutBio,
+          scoutBioSource: foxBio.scoutBioSource,
+          ...(foxBio.scoutBioAnalyst ? { scoutBioAnalyst: foxBio.scoutBioAnalyst } : {}),
+        }
+      : {}),
+    ...((reuters.keyPlayer || fox.foxRank || foxPredictions.foxPredictions?.length || foxBio.scoutBio || guardian?.scoutTag)
+      ? {
+          keyPlayer: true,
+          ...(spotlight ?? {}),
+          ...(fox.foxRank ? { foxRank: fox.foxRank } : {}),
+          ...(fox.foxCaps ? { foxCaps: fox.foxCaps } : {}),
+          ...(fox.foxUnavailable ? { foxUnavailable: fox.foxUnavailable } : {}),
+          ...(foxPredictions.foxPredictions?.length
+            ? {
+                foxPredictions: foxPredictions.foxPredictions,
+                foxPredictionNote: foxPredictions.foxPredictionNote,
+              }
+            : {}),
+        }
+      : {}),
   }
 }
 

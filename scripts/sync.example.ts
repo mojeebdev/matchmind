@@ -15,14 +15,16 @@
 console.error(`
 MatchMind sync is not set up on this machine.
 
-1. Copy scripts/sync.example.ts → scripts/sync.ts (use your private version)
-2. Copy data/sync/feed.example.json → data/sync/feed.json
-3. Add to .env (optional):
-     SYNC_MODE=feed
-     SYNC_FEED_PATH=data/sync/feed.json
-     FOOTBALL_DATA_API_KEY=...   # only if SYNC_MODE=api|both
+1. Copy scripts/sync.example.ts → scripts/sync.ts (full version with FIFA support)
+2. Add to .env:
+     SYNC_MODE=fifa              # recommended — finished scores from FIFA
+     # SYNC_MODE=both            # FIFA + data/sync/feed.json for player stats
+3. Optional manual feed:
+     cp data/sync/feed.example.json data/sync/feed.json
 
-Then run: npm run sync
+Then run:
+  npm run sync -- --dry-run
+  npm run sync
 `)
 
 process.exit(1)

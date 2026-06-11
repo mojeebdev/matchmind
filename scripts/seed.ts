@@ -173,8 +173,8 @@ async function seed() {
       console.log('   Ask the agent: "What are the Group A fixtures?" or "Who won the 2022 World Cup?"')
     } else {
       console.log('\n✅ World Cup 2026 LIVE database ready!')
-      console.log('   48 teams · 12 groups · 104 fixtures · H2H (squads pending FIFA)')
-      console.log('   Run npm run sync after matches to update scores')
+      console.log('   48 teams · 1248 players · 104 fixtures · 72 H2H')
+      console.log('   Run npm run sync (SYNC_MODE=fifa) after matches for FIFA scores')
     }
   } catch (error) {
     console.error(formatConnectionHelp(error))

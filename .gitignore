@@ -68,4 +68,13 @@ next-env.d.ts
 terminals
 MatchMind.md
 
+# local article scrape/cache (research only — data lives in lib/)
+/fox-*.html
+/npr-*.html
+/guardian-*.html
+/guardian-app.js
+/guardian-*.json
+/fox-top100-parsed.json
+/fox-top100-preview.ts
+
 gcloud.sh
