@@ -29,7 +29,7 @@ It classifies intent, queries the MongoDB football intelligence database via MCP
 | Mode | When | Badge | What's official | What's mockup |
 |---|---|---|---|---|
 | **Preview mockup** | Before 11 Jun 2026 | ◇ Preview mockup (amber) | Groups, **104 fixtures**, venues, squads (Guardian + FOX USA), H2H | Group-stage scores, standings, player WC stats |
-| **Live** | On/after kickoff | ● Live MongoDB (green) | Fixtures + FIFA-synced scores & standings | Player WC stats until manual feed / admin update |
+| **Live** | On/after kickoff | ● Live MongoDB (green) | Fixtures + FIFA-synced scores & standings | Player WC stats via FotMob sync or manual feed |
 | **Demo** | MongoDB not configured | ○ Demo data | Same official fixture structure | In-memory fallback scores |
 
 Automatic switch is date-based (`lib/tournament-phase.ts`). Override for testing:
@@ -131,9 +131,28 @@ npm run sync                # write scores to MongoDB
 | `feed` | `data/sync/feed.json` | Manual scores + player goal deltas |
 | `both` | FIFA + local feed | Scores from FIFA; player stats from feed |
 
-FIFA sync does **not** pull player goals/assists — use the admin agent or `feed` for that. See [docs/DATA-SOURCES.md](docs/DATA-SOURCES.md).
+FIFA sync does **not** pull player goals/assists — use **FotMob** (below), the admin agent, or `feed` for that. See [docs/DATA-SOURCES.md](docs/DATA-SOURCES.md) and [docs/PLAYER-STATS-SOURCES.md](docs/PLAYER-STATS-SOURCES.md).
 
 **Match days:** run `npm run sync` after final whistles, or schedule it every 15–30 minutes.
+
+### Player stats sync (FotMob — automated)
+
+After each matchday, pull tournament goals, assists, minutes, xG, and rating from FotMob into `data/sync/feed.json`, then sync to MongoDB:
+
+```bash
+npm run fotmob-feed          # ~365 players with WC minutes (fast — league stat JSON)
+# or full squad + club form:
+npm run fotmob-full          # 1,149 mapped players + playerData enrich (~3 min)
+
+npm run validate-feed        # check names vs 1,248-player roster
+SYNC_MODE=both npm run sync  # FIFA scores + player stats
+```
+
+| Command | What it does |
+|---|---|
+| `npm run fotmob-feed` | League stat lists — G/A, minutes, xG, rating for everyone who played |
+| `npm run fotmob-squads` | Map 48 national teams → FotMob player IDs (`data/sync/fotmob-id-map.json`) |
+| `npm run fotmob-full` | Squad map + `playerData` enrich — club form, club & WC match logs |
 
 ### Run locally
 
@@ -152,6 +171,10 @@ Open [http://localhost:3000](http://localhost:3000) · Agent UI at `/agent` · A
 | Script | Command | Purpose |
 |---|---|---|
 | `scripts/seed.ts` | `npm run seed` | Load World Cup 2026 dataset into MongoDB |
+| `scripts/fotmob-to-feed.mjs` | `npm run fotmob-feed` | Build player feed from FotMob league stats |
+| `scripts/fotmob-squads.mjs` | `npm run fotmob-squads` / `fotmob-full` | Map squads to FotMob IDs; optional enrich |
+| `scripts/fotmob-shared.mjs` | — | Shared FotMob name/team matching utilities |
+| `scripts/validate-feed.mjs` | `npm run validate-feed` | Validate `feed.json` names against roster |
 | `scripts/sync.example.ts` | — | Template stub for local sync setup |
 | `scripts/gcloud.example.sh` | — | Template for Git Bash gcloud wrapper |
 | `scripts/test-mongo.example.ts` | — | Template for MongoDB connectivity check |
@@ -186,7 +209,14 @@ Or `/agent/admin` → **Sync from FIFA**.
 2. Enter `ADMIN_SECRET` from `.env`
 3. Example: *"Mbappé scored — add 1 goal to his tournament total."*
 
-**Option C — Local feed (player stats + manual overrides)**
+**Option C — FotMob feed (recommended for player stats)**
+
+```bash
+npm run fotmob-feed && npm run validate-feed
+SYNC_MODE=both npm run sync
+```
+
+**Option D — Local feed (manual overrides)**
 
 ```bash
 cp data/sync/feed.example.json data/sync/feed.json
@@ -228,7 +258,7 @@ SYNC_MODE=fifa                  # live scores from FIFA (npm run sync)
 ## MongoDB Collections
 
 - `teams` — group standings, form, possession
-- `players` — goals, assists, xG
+- `players` — goals, assists, xG, minutes, club form, match logs, `fotmobId`
 - `matches` — fixtures, scores, stage, xG
 - `headToHead` — historical meetings
 - `groups` — group definitions (A–L)
@@ -261,6 +291,8 @@ Scrims (`--scrim-*` in `styles/globals.css`) keep stadium art visible while text
 
 - **[Architecture](/docs/architecture)** — agent flow, admin writes, security, implementation map
 - **`docs/ARCHITECTURE.md`** — same content in markdown for judges/repo
+- **`docs/DATA-SOURCES.md`** — official vs mockup vs live data breakdown
+- **`docs/PLAYER-STATS-SOURCES.md`** — FIFA, FotMob, ESPN, FOX workflow for matchday stats
 
 ---
 

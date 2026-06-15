@@ -41,8 +41,12 @@ export type PlayerRecord = {
     avgRating: number
   }
   /** curated = hand-picked samples; illustrative = hash-generated demo data */
-  clubFormSource?: 'curated' | 'illustrative'
+  clubFormSource?: 'curated' | 'illustrative' | 'fotmob'
   recentClubMatches: ClubMatch[]
+  /** World Cup 2026 match log from FotMob sync */
+  recentTournamentMatches?: ClubMatch[]
+  /** FotMob player id for incremental sync */
+  fotmobId?: number
   /** Guardian squad-guide headshot */
   playerImageUrl?: string
   /** Guardian per-player bio (FOX scoutBio takes precedence for spotlight cards) */

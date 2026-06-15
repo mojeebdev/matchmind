@@ -9,6 +9,10 @@
     "lint": "next lint",
     "seed": "tsx scripts/seed.ts",
     "sync": "tsx scripts/sync.ts",
+    "validate-feed": "tsx scripts/validate-feed.mjs",
+    "fotmob-feed": "tsx scripts/fotmob-to-feed.mjs data/sync/feed.json",
+    "fotmob-squads": "tsx scripts/fotmob-squads.mjs",
+    "fotmob-full": "tsx scripts/fotmob-squads.mjs --enrich --feed",
     "agent:dev": "npx adk web",
     "agent:run": "npx adk run agent/matchmind-agent.ts",
     "agent:deploy": "npx adk deploy agent_engine"

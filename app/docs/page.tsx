@@ -129,6 +129,15 @@ export default function DocsPage() {
               Official vs mockup vs live — fixtures, squads, preview scores, and sync pipeline.
             </p>
           </div>
+
+          <div style={cardStyle}>
+            <span style={cardTitle}>
+              <DocFileLink path="docs/PLAYER-STATS-SOURCES.md">docs/PLAYER-STATS-SOURCES.md</DocFileLink>
+            </span>
+            <p style={cardBody}>
+              Matchday player stats — FIFA scores, FotMob automated feed, ESPN/FOX fallbacks, and sync workflow.
+            </p>
+          </div>
         </div>
       </main>
       <Footer />

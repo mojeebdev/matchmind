@@ -1,7 +1,7 @@
 {
   "meta": {
     "source": "manual-feed",
-    "note": "Copy to data/sync/feed.json (gitignored) and edit after matchdays"
+    "note": "Copy to data/sync/feed.json. Full MD1 template: feed-md1.example.json. Guide: docs/PLAYER-STATS-SOURCES.md"
   },
   "matches": [
     {

@@ -80,6 +80,7 @@ UI: `/agent/admin`
 | Seed | `npm run seed` | Full reset — preview mockup before kickoff, live fixtures after |
 | Admin agent | `/agent/admin` | Natural-language writes |
 | Local sync | `npm run sync` | Private `scripts/sync.ts` + `data/sync/feed.json` (gitignored) |
+| FotMob player stats | `npm run fotmob-feed` / `fotmob-full` | Public scripts → `feed.json` → `SYNC_MODE=both npm run sync` |
 
 > Powered by live MongoDB sync after tournament kickoff. Independent of any official broadcast data feed. Before kickoff: **preview mockup** (clearly labeled). After kickoff: **live** synced results.
 

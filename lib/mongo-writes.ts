@@ -160,12 +160,37 @@ export async function updateMatchResult(input: {
   }
 }
 
+type ClubFormUpdate = {
+  lastFive: string[]
+  seasonGoals: number
+  seasonAssists: number
+  avgRating: number
+}
+
+type MatchLogUpdate = {
+  date: string
+  opponent: string
+  competition: string
+  result: string
+  goals: number
+  assists: number
+  minutes: number
+  rating?: number
+}
+
 export async function updatePlayerStats(input: {
   playerName: string
   goals?: number
   assists?: number
   goalsDelta?: number
   assistsDelta?: number
+  minutes?: number
+  xG?: number
+  fotmobId?: number
+  clubForm?: ClubFormUpdate
+  clubFormSource?: 'curated' | 'illustrative' | 'fotmob'
+  recentClubMatches?: MatchLogUpdate[]
+  recentTournamentMatches?: MatchLogUpdate[]
 }) {
   const client = await getMongoClient()
   const db = client.db('matchmind')
@@ -188,15 +213,27 @@ export async function updatePlayerStats(input: {
   if (typeof input.assistsDelta === 'number') {
     update.assists = (player.assists as number) + input.assistsDelta
   }
+  if (typeof input.minutes === 'number') update.minutes = input.minutes
+  if (typeof input.xG === 'number') update.xG = input.xG
 
-  if (Object.keys(update).length === 0) {
+  const nested: Record<string, unknown> = {}
+  if (typeof input.fotmobId === 'number') nested.fotmobId = input.fotmobId
+  if (input.clubForm) nested.clubForm = input.clubForm
+  if (input.clubFormSource) nested.clubFormSource = input.clubFormSource
+  if (input.recentClubMatches) nested.recentClubMatches = input.recentClubMatches
+  if (input.recentTournamentMatches) nested.recentTournamentMatches = input.recentTournamentMatches
+
+  if (Object.keys(update).length === 0 && Object.keys(nested).length === 0) {
     return {
       status: 'error' as const,
-      message: 'Provide goals/assists or goalsDelta/assistsDelta to update',
+      message: 'Provide goals/assists/minutes/xG/clubForm or goalsDelta/assistsDelta to update',
     }
   }
 
-  await db.collection('players').updateOne({ _id: player._id }, { $set: update })
+  await db.collection('players').updateOne(
+    { _id: player._id },
+    { $set: { ...update, ...nested } }
+  )
 
   const beforeGoals = player.goals as number
   const afterGoals = (update.goals ?? player.goals) as number
@@ -225,10 +262,17 @@ export async function updatePlayerStats(input: {
     player: {
       name: player.name,
       team: player.team,
-      before: { goals: player.goals, assists: player.assists },
+      before: {
+        goals: player.goals,
+        assists: player.assists,
+        minutes: player.minutes,
+        xG: player.xG,
+      },
       after: {
         goals: afterGoals,
         assists: update.assists ?? player.assists,
+        minutes: update.minutes ?? player.minutes,
+        xG: update.xG ?? player.xG,
       },
     },
   }

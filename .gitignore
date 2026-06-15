@@ -44,11 +44,16 @@ scripts/*
 !scripts/sync.example.ts
 !scripts/gcloud.example.sh
 !scripts/test-mongo.example.ts
+!scripts/fotmob-shared.mjs
+!scripts/fotmob-to-feed.mjs
+!scripts/fotmob-squads.mjs
+!scripts/validate-feed.mjs
 
 # private data feed for npm run sync
 data/sync/*
 !data/sync/.gitkeep
 !data/sync/feed.example.json
+!data/sync/feed-md1.example.json
 
 # local overrides / notes
 LOCAL.md

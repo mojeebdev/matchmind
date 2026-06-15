@@ -10,12 +10,38 @@ export const MatchUpdateSchema = z.object({
   status: z.enum(['scheduled', 'live', 'finished']).optional(),
 })
 
+const MatchLogSchema = z.object({
+  date: z.string(),
+  opponent: z.string(),
+  competition: z.string(),
+  result: z.string(),
+  goals: z.number().int().min(0),
+  assists: z.number().int().min(0),
+  minutes: z.number().int().min(0),
+  rating: z.number().optional(),
+})
+
 export const PlayerUpdateSchema = z.object({
   playerName: z.string().min(1),
   goals: z.number().int().min(0).optional(),
   assists: z.number().int().min(0).optional(),
   goalsDelta: z.number().int().optional(),
   assistsDelta: z.number().int().optional(),
+  minutes: z.number().int().min(0).optional(),
+  xG: z.number().min(0).optional(),
+  rating: z.number().min(0).optional(),
+  fotmobId: z.number().int().optional(),
+  clubForm: z
+    .object({
+      lastFive: z.array(z.string()),
+      seasonGoals: z.number().min(0),
+      seasonAssists: z.number().min(0),
+      avgRating: z.number().min(0),
+    })
+    .optional(),
+  clubFormSource: z.enum(['curated', 'illustrative', 'fotmob']).optional(),
+  recentClubMatches: z.array(MatchLogSchema).optional(),
+  recentTournamentMatches: z.array(MatchLogSchema).optional(),
 })
 
 export const FeedSchema = z.object({

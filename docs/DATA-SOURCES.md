@@ -79,7 +79,9 @@ Active on/after **11 June 2026** or with `FORCE_TOURNAMENT_LIVE=true`. Labeled *
 |---------|--------|--------|
 | Match results & scores | FIFA `api.fifa.com` via `lib/fifa-sync.ts` | Synced on `npm run sync` |
 | Group standings | Recalculated in MongoDB from finished group matches | Auto after score sync |
-| Player tournament stats | Admin agent or `data/sync/feed.json` (`SYNC_MODE=both`) | Manual / feed only — FIFA sync does not include player stats |
+| Player tournament stats | FotMob (`npm run fotmob-feed` / `fotmob-full`) → `feed.json` → `SYNC_MODE=both` | Automated — goals, assists, minutes, xG, rating |
+| Player club form & match logs | FotMob `playerData` via `npm run fotmob-full` | Automated for ~1,149 mapped players |
+| Player tournament stats (manual) | Admin agent or hand-edited `feed.json` | Fallback when FotMob name match fails |
 | Knockout results | Same FIFA sync when matches finish | Synced live |
 
 Knockout bracket (matches 73–104) is **pre-seeded** with official FIFA placeholders. Results fill in via sync as FIFA reports them.
@@ -93,6 +95,22 @@ npm run seed
 ```
 
 Writes `tournament.dataSources` and `tournament.dataMode` to MongoDB so the agent knows what is official vs mockup vs editorial.
+
+---
+
+## Player stats pipeline (FotMob)
+
+See **[docs/PLAYER-STATS-SOURCES.md](PLAYER-STATS-SOURCES.md)** for the full matchday workflow.
+
+| Step | Command |
+|------|---------|
+| Scores | `SYNC_MODE=fifa npm run sync` |
+| Player stats (fast) | `npm run fotmob-feed` |
+| Full squad + club form | `npm run fotmob-full` |
+| Validate names | `npm run validate-feed` |
+| Apply | `SYNC_MODE=both npm run sync` |
+
+FotMob sources: league stat JSON (`data.fotmob.com`), national team squads (`teams?id=&tab=squad`), per-player API (`playerData?id=`).
 
 ---
 
