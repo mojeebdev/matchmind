@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { withMongoRetry } from './mongo-connection'
 import { updateMatchResult, updatePlayerStats } from './mongo-writes'
 import { getMongoClient } from './mongodb'
 
@@ -96,7 +97,7 @@ export async function applySyncFeed(
       continue
     }
 
-    const result = await updateMatchResult(match)
+    const result = await withMongoRetry(() => updateMatchResult(match))
     if (result.status === 'success') {
       matchOk++
     } else {
@@ -105,13 +106,19 @@ export async function applySyncFeed(
     }
   }
 
-  for (const player of feed.players) {
+  const playerTotal = feed.players.length
+  for (let i = 0; i < feed.players.length; i++) {
+    const player = feed.players[i]
     if (dryRun) {
       playerOk++
       continue
     }
 
-    const result = await updatePlayerStats(player)
+    if (playerTotal >= 50 && i > 0 && i % 50 === 0) {
+      console.info(`[sync] Players ${i}/${playerTotal}…`)
+    }
+
+    const result = await withMongoRetry(() => updatePlayerStats(player))
     if (result.status === 'success') {
       playerOk++
     } else {
@@ -121,7 +128,7 @@ export async function applySyncFeed(
   }
 
   if (!dryRun && matchOk + playerOk > 0) {
-    await stampSyncMetadata(feed.meta?.source ?? 'local-feed')
+    await withMongoRetry(() => stampSyncMetadata(feed.meta?.source ?? 'local-feed'))
   }
 
   return { matchOk, matchFail, playerOk, playerFail, errors }

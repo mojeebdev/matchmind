@@ -35,18 +35,52 @@ export function isMongoUriConfigured(): boolean {
   return Boolean(uri && !uri.includes('username:password'))
 }
 
-function isMongoNetworkError(error: unknown): boolean {
+export function isMongoNetworkError(error: unknown): boolean {
   if (!error || typeof error !== 'object') return false
-  const err = error as { name?: string; message?: string; errorLabels?: Set<string> }
+  const err = error as {
+    name?: string
+    message?: string
+    code?: string
+    cause?: { code?: string; message?: string }
+    errorLabels?: Set<string>
+  }
   const name = err.name ?? ''
   const message = err.message ?? ''
+  const code = err.code ?? err.cause?.code ?? ''
   return (
     name.includes('MongoNetwork') ||
     name.includes('MongoServerSelection') ||
+    code === 'ECONNRESET' ||
+    code === 'ETIMEDOUT' ||
+    message.includes('ECONNRESET') ||
+    message.includes('ETIMEDOUT') ||
     (message.includes('connection') && message.includes('closed')) ||
     err.errorLabels?.has('ResetPool') === true ||
     err.errorLabels?.has('HandshakeError') === true
   )
+}
+
+const RETRY_DELAY_MS = 750
+
+function retryDelay(attempt: number) {
+  return new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS * attempt))
+}
+
+/** Retry Atlas writes when Windows/long sync drops the socket (ECONNRESET). */
+export async function withMongoRetry<T>(fn: () => Promise<T>, attempts = 4): Promise<T> {
+  let lastError: unknown
+  for (let attempt = 1; attempt <= attempts; attempt++) {
+    try {
+      return await fn()
+    } catch (error) {
+      lastError = error
+      if (!isMongoNetworkError(error) || attempt === attempts) throw error
+      console.warn(`[MatchMind] MongoDB retry ${attempt}/${attempts - 1} after network error`)
+      resetMongoClient()
+      await retryDelay(attempt)
+    }
+  }
+  throw lastError
 }
 
 function attachPoolErrorHandler(client: MongoClient) {
