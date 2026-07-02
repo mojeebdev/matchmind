@@ -48,6 +48,7 @@ scripts/*
 !scripts/fotmob-to-feed.mjs
 !scripts/fotmob-squads.mjs
 !scripts/validate-feed.mjs
+!scripts/check-sync-status.mjs
 
 # private data feed for npm run sync
 data/sync/*
