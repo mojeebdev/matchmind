@@ -1,3 +1,4 @@
+import type { Db, Document } from 'mongodb'
 import { getMongoClient } from './mongodb'
 
 type TeamStanding = {
@@ -86,44 +87,54 @@ export async function recalculateGroupStandings(group: string) {
   return { group, teamsUpdated: updates.length, updates }
 }
 
-export async function updateMatchResult(input: {
-  homeTeam: string
-  awayTeam: string
-  homeScore: number
-  awayScore: number
-  status?: 'scheduled' | 'live' | 'finished'
-}) {
-  const client = await getMongoClient()
-  const db = client.db('matchmind')
+const KNOCKOUT_STAGES = ['round-of-32', 'round-of-16', 'quarter', 'semi', 'third-place', 'final']
 
-  const match = await db.collection('matches').findOne({
-    homeTeam: input.homeTeam,
-    awayTeam: input.awayTeam,
-  })
+async function findKnockoutByKickoff(db: Db, kickoff: string) {
+  const target = new Date(kickoff).getTime()
+  if (Number.isNaN(target)) return null
 
-  if (!match) {
-    const swapped = await db.collection('matches').findOne({
-      homeTeam: input.awayTeam,
-      awayTeam: input.homeTeam,
-    })
-    if (!swapped) {
-      return {
-        status: 'error' as const,
-        message: `No match found for ${input.homeTeam} vs ${input.awayTeam}`,
-      }
-    }
-    return {
-      status: 'error' as const,
-      message: `Match exists as ${input.awayTeam} (home) vs ${input.homeTeam} (away). Use that home/away order.`,
+  const candidates = await db
+    .collection('matches')
+    .find({ stage: { $in: KNOCKOUT_STAGES } })
+    .toArray()
+
+  let best: (typeof candidates)[number] | null = null
+  let bestDelta = Infinity
+  for (const row of candidates) {
+    const rowTime = new Date(row.date as Date).getTime()
+    if (Number.isNaN(rowTime)) continue
+    const delta = Math.abs(rowTime - target)
+    if (delta < bestDelta) {
+      bestDelta = delta
+      best = row
     }
   }
 
-  const previous = match.score as { home: number; away: number }
+  // FIFA kickoffs can differ by ~1h from our schedule PDF; pick nearest within 2h.
+  return bestDelta <= 2 * 60 * 60_000 ? best : null
+}
+
+async function applyMatchUpdate(
+  db: Db,
+  match: Document,
+  input: {
+    homeTeam: string
+    awayTeam: string
+    homeScore: number
+    awayScore: number
+    status?: 'scheduled' | 'live' | 'finished'
+  },
+  score: { home: number; away: number },
+  display: { homeTeam: string; awayTeam: string }
+) {
+  const previous = (match.score as { home: number; away: number }) ?? { home: 0, away: 0 }
   await db.collection('matches').updateOne(
     { _id: match._id },
     {
       $set: {
-        score: { home: input.homeScore, away: input.awayScore },
+        homeTeam: display.homeTeam,
+        awayTeam: display.awayTeam,
+        score,
         status: input.status ?? 'finished',
         updatedAt: new Date(),
       },
@@ -138,10 +149,10 @@ export async function updateMatchResult(input: {
   import('@/lib/notifications')
     .then(({ notifySupportedCountryMatchResult }) =>
       notifySupportedCountryMatchResult({
-        homeTeam: input.homeTeam,
-        awayTeam: input.awayTeam,
-        homeScore: input.homeScore,
-        awayScore: input.awayScore,
+        homeTeam: display.homeTeam,
+        awayTeam: display.awayTeam,
+        homeScore: score.home,
+        awayScore: score.away,
       })
     )
     .catch((error) => console.error('Match alert emails failed:', error))
@@ -149,14 +160,74 @@ export async function updateMatchResult(input: {
   return {
     status: 'success' as const,
     match: {
-      homeTeam: input.homeTeam,
-      awayTeam: input.awayTeam,
+      homeTeam: display.homeTeam,
+      awayTeam: display.awayTeam,
       previousScore: previous,
-      newScore: { home: input.homeScore, away: input.awayScore },
-      group: match.group ?? null,
+      newScore: score,
+      group: (match.group as string | null) ?? null,
       stage: match.stage,
     },
     standings,
+  }
+}
+
+export async function updateMatchResult(input: {
+  homeTeam: string
+  awayTeam: string
+  homeScore: number
+  awayScore: number
+  status?: 'scheduled' | 'live' | 'finished'
+  date?: string
+}) {
+  const client = await getMongoClient()
+  const db = client.db('matchmind')
+
+  let match = await db.collection('matches').findOne({
+    homeTeam: input.homeTeam,
+    awayTeam: input.awayTeam,
+  })
+
+  if (match) {
+    return applyMatchUpdate(
+      db,
+      match,
+      input,
+      { home: input.homeScore, away: input.awayScore },
+      { homeTeam: input.homeTeam, awayTeam: input.awayTeam }
+    )
+  }
+
+  const swapped = await db.collection('matches').findOne({
+    homeTeam: input.awayTeam,
+    awayTeam: input.homeTeam,
+  })
+
+  if (swapped) {
+    return applyMatchUpdate(
+      db,
+      swapped,
+      input,
+      { home: input.awayScore, away: input.homeScore },
+      { homeTeam: input.homeTeam, awayTeam: input.awayTeam }
+    )
+  }
+
+  if (input.date) {
+    match = await findKnockoutByKickoff(db, input.date)
+    if (match) {
+      return applyMatchUpdate(
+        db,
+        match,
+        input,
+        { home: input.homeScore, away: input.awayScore },
+        { homeTeam: input.homeTeam, awayTeam: input.awayTeam }
+      )
+    }
+  }
+
+  return {
+    status: 'error' as const,
+    message: `No match found for ${input.homeTeam} vs ${input.awayTeam}`,
   }
 }
 

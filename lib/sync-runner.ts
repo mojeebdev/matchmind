@@ -9,6 +9,7 @@ export const MatchUpdateSchema = z.object({
   homeScore: z.number().int().min(0),
   awayScore: z.number().int().min(0),
   status: z.enum(['scheduled', 'live', 'finished']).optional(),
+  date: z.string().optional(),
 })
 
 const MatchLogSchema = z.object({
